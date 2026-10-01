@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "ranks": 2,
+  "riders": 4,
+  "reverse": "silhouette",
+  "infantryHeight": 14.5,
+  "mountedHeight": 21,
+  "groundColor": "#b6bc91",
+  "figureColor": "#ffffff",
+  "paper": "a4",
+  "orientation": "portrait",
+  "margin": 10,
+  "gap": 4,
+  "guides": true,
+  "quantities": {
+    "gondor-swords": 1,
+    "gondor-horse": 1,
+    "orc-axes": 1,
+    "orc-wargs": 1,
+    "orc-warband": 0,
+    "gondor-spears": 0
+  }
+}
