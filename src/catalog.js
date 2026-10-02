@@ -5,4 +5,8 @@ export const catalog = [
   {id: 'orc-wargs', name: 'Orc warg riders', faction: 'Orcs', kind: 'Mounted', height: 20, file: 'orc-warg-profile.png', note: 'Clean style · mirrored warg profiles'},
   {id: 'orc-warband', name: 'Orc warband', faction: 'Orcs', kind: 'Infantry', height: 14.136, file: 'orc-warband-unit-v2.png', note: 'Clean style · eight mixed warriors'},
   {id: 'gondor-spears', name: 'Gondor spearmen', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-spearmen-unit.png', note: 'Original textured style · eight spearmen'},
+  {id: 'gondor-archers', name: 'Gondor archers', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-archers-clean.png', note: 'Clean style · eight foot archers'},
+  {id: 'gondor-horse-archers', name: 'Gondor mounted archers', faction: 'Gondor', kind: 'Mounted', height: 20, file: 'gondor-mounted-archer-profile.png', note: 'Clean style · mirrored horse archer profiles'},
+  {id: 'orc-archers', name: 'Orc archers', faction: 'Orcs', kind: 'Infantry', height: 13.5, file: 'orc-archers-clean.png', note: 'Clean style · eight foot archers'},
+  {id: 'orc-warg-archers', name: 'Orc mounted archers', shortName: 'Orc warg archers', faction: 'Orcs', kind: 'Mounted', height: 20, file: 'orc-mounted-archer-profile.png', note: 'Clean style · mirrored warg archer profiles'},
 ].map(art => ({...art, path: `output/imagegen/${art.file}`}));

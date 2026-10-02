@@ -2,6 +2,8 @@
 
 A static paper-army workshop for folded standees on **40 mm wide × 20 mm deep bases**. Choose Gondor or orc units, set quantities and colors, preview the cutting sheets, and download accurately sized PDFs.
 
+The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers and horse archers, plus orc axemen, mixed warriors, foot archers, warg riders and warg archers. Foot units are frontal ranks of eight figures; mounted units use side profiles mirrored on their reverse faces.
+
 ## Run
 
 From this folder:
@@ -60,7 +62,7 @@ This version uses rectangular upright panels so the figure background color rema
 - `src/catalog.js`: bundled artwork catalog.
 - `vendor/`: locally bundled pdf-lib 1.17.1 and its MIT license, taken from the neighboring midgard-sticker-maker project's vendor folder.
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
-- `output/imagegen/`: the six PNGs used by the catalog and their artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
+- `output/imagegen/`: the PNGs used by the catalog and their artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`, and foot/mounted archer prompts in `archer-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
 
 The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Paper Army Standees.
 

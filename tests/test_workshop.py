@@ -83,7 +83,10 @@ class WorkshopTests(unittest.TestCase):
         result = self.page.evaluate('''async () => {
           const {defaultSetup,layoutSetup} = await import('./src/model.js');
           const {prepareArtwork,panelKey} = await import('./src/render.js');
-          const layout=layoutSetup(defaultSetup()), assets=await prepareArtwork(layout), result=[];
+          const {catalog} = await import('./src/catalog.js');
+          const setup=defaultSetup();
+          setup.quantities=Object.fromEntries(catalog.map(art=>[art.id,1]));
+          const layout=layoutSetup(setup), assets=await prepareArtwork(layout), result=[];
           async function pixels(url) {
             const img=new Image();img.src=url;await img.decode();
             const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
@@ -140,7 +143,7 @@ class WorkshopTests(unittest.TestCase):
           const results=[];
           for(const paper of ['a4','letter']) for(const orientation of ['portrait','landscape']) {
             const s={...defaultSetup(),paper,orientation,riders:2};
-            for(const id in s.quantities)s.quantities[id]=12;
+            for(const id in s.quantities)s.quantities[id]=8;
             const l=layoutSetup(s);results.push({width:l.width,height:l.height,margin:l.margin,
               pages:l.pages.map(p=>p.map(x=>({x:x.x,y:x.y,w:x.width,h:x.height,captionY:x.captionY})))});
           }
@@ -148,7 +151,7 @@ class WorkshopTests(unittest.TestCase):
         }''')
         for layout in result:
             self.assertGreater(len(layout['pages']), 1)
-            self.assertEqual(sum(map(len, layout['pages'])), 72)
+            self.assertEqual(sum(map(len, layout['pages'])), 80)
             for page in layout['pages']:
                 for i, a in enumerate(page):
                     self.assertGreaterEqual(a['x'], layout['margin'])
@@ -227,6 +230,34 @@ class WorkshopTests(unittest.TestCase):
             self.assertAlmostEqual(size['width'], 612)
             self.assertAlmostEqual(size['height'], 792)
 
+    def test_archer_units_load_legacy_setups_and_export_pdf(self):
+        archer_ids = ['gondor-archers', 'gondor-horse-archers', 'orc-archers', 'orc-warg-archers']
+        self.page.locator('#load-file').set_input_files(str(ROOT / 'examples/starter-setup.json'))
+        self.ready()
+        for art_id in archer_ids:
+            expect(self.page.locator(f'#qty-{art_id}')).to_have_value('0')
+        for art_id in ['gondor-swords', 'gondor-horse', 'orc-axes', 'orc-wargs']:
+            self.page.locator(f'#qty-{art_id}').fill('0')
+        for art_id in archer_ids:
+            self.page.locator(f'#qty-{art_id}').fill('1')
+        self.ready()
+        result = self.page.evaluate('''async () => {
+          const {layoutSetup}=await import('./src/model.js');
+          const {prepareArtwork,createPDF}=await import('./src/render.js');
+          const setup=JSON.parse(localStorage.getItem('uprights.setup.v1'));
+          const layout=layoutSetup(setup),assets=await prepareArtwork(layout);
+          const bytes=await createPDF(layout,assets),pdf=await PDFLib.PDFDocument.load(bytes);
+          return {ids:layout.pages.flat().map(strip=>strip.art.id),
+            total:layout.total,assets:assets.size,pages:pdf.getPageCount(),expected:layout.pages.length};
+        }''')
+        self.assertCountEqual(result['ids'], archer_ids)
+        self.assertEqual(result['total'], 4)
+        self.assertEqual(result['assets'], 8)
+        self.assertEqual(result['pages'], result['expected'])
+        with self.page.expect_download(timeout=30000) as download:
+            self.page.locator('#download').click()
+        self.assertTrue(Path(download.value.path()).read_bytes().startswith(b'%PDF-'))
+
     def test_invalid_setup_empty_army_and_oversized_strips(self):
         self.page.locator('#qty-gondor-swords').fill('-1')
         expect(self.page.locator('#download')).to_be_disabled()
@@ -301,7 +332,8 @@ class WorkshopTests(unittest.TestCase):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
         self.page.locator('[data-filter="Orcs"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 3)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 5)
+        self.assertEqual(self.page.locator('.art-card:visible:not([data-faction="Orcs"])').count(), 0)
         self.assertEqual(self.page.locator('#qty-gondor-swords').input_value(), '1')
         self.page.locator('#qty-orc-axes').fill('20')
         self.ready()
