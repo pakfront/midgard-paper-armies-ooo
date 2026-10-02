@@ -384,6 +384,43 @@ class WorkshopTests(unittest.TestCase):
             self.page.locator('#download').click()
         self.assertTrue(Path(download.value.path()).read_bytes().startswith(b'%PDF-'))
 
+    def test_clear_setup_confirmation_and_persistence(self):
+        self.page.locator('#nameplates').check()
+        self.page.locator('#name-gondor-swords').fill('Guard')
+        self.page.locator('[data-art="gondor-swords"] summary').click()
+        self.page.locator('#copy-name-gondor-swords-1').fill('First Guard')
+        self.page.locator('#ground-color').fill('#245632')
+        self.ready()
+        before = self.page.evaluate("localStorage.getItem('uprights.setup.v1')")
+
+        def cancel(dialog):
+            self.assertEqual(dialog.type, 'confirm')
+            self.assertIn('all selected bases', dialog.message)
+            dialog.dismiss()
+
+        self.page.once('dialog', cancel)
+        self.page.locator('#clear').click()
+        self.assertEqual(before, self.page.evaluate("localStorage.getItem('uprights.setup.v1')"))
+        expect(self.page.locator('#name-gondor-swords')).to_have_value('Guard')
+        expect(self.page.locator('#copy-name-gondor-swords-1')).to_have_value('First Guard')
+
+        self.page.once('dialog', lambda dialog: dialog.accept())
+        self.page.locator('#clear').click()
+        expect(self.page.locator('#base-count')).to_have_text('0 bases')
+        expect(self.page.locator('#sheet')).to_contain_text('Choose at least one base')
+        expect(self.page.locator('#download')).to_be_disabled()
+        self.page.reload()
+        expect(self.page.locator('#sheet')).to_contain_text('Choose at least one base')
+        expect(self.page.locator('#ground-color')).to_have_value('#245632')
+        expect(self.page.locator('#nameplates')).to_be_checked()
+        saved = self.page.evaluate("JSON.parse(localStorage.getItem('uprights.setup.v1'))")
+        self.assertTrue(all(value == 0 for value in saved['quantities'].values()))
+        self.assertTrue(all(value == '' for value in saved['names'].values()))
+        self.assertTrue(all(value == [] for value in saved['copyNames'].values()))
+        self.page.locator('#qty-gondor-swords').fill('1')
+        self.ready()
+        expect(self.page.locator('#copy-name-gondor-swords-1')).to_have_value('')
+
     def test_invalid_setup_empty_army_and_oversized_strips(self):
         self.page.locator('#qty-gondor-swords').fill('-1')
         expect(self.page.locator('#download')).to_be_disabled()

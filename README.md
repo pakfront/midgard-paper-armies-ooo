@@ -46,6 +46,8 @@ The site also works with `python3 -m http.server 8000` or any static web host. S
 
 Settings are remembered in this browser. **Save setup** downloads a JSON file containing quantities, unit and individual base names, the nameplate toggle, folds, colors, and paper settings. **Load setup** restores one; this makes it possible to keep several separate armies/palettes. Artwork remains in the site rather than being duplicated into each setup file.
 
+**Clear setup** asks for confirmation before removing all selected bases and custom unit and base names. Fold, color, and paper settings are kept, and the cleared setup is remembered in this browser.
+
 ## Fold geometry
 
 Each upright consists of two panels folded at their shared crest and glued back-to-back. Flat ground sections connect the uprights and glue onto the base, colored side up. End feet are half the spacing of the intermediate feet, centering the uprights evenly.

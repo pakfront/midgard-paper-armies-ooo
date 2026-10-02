@@ -155,6 +155,18 @@ $('save').addEventListener('click', () => {
   catch (error) { tell(error.message, true); }
 });
 $('load').addEventListener('click', () => $('load-file').click());
+$('clear').addEventListener('click', () => {
+  if (!window.confirm('Clear setup? This removes all selected bases and custom unit and base names. Fold, color, and paper settings are kept. This cannot be undone.')) return;
+  setup.quantities = Object.fromEntries(catalog.map(art => [art.id, 0]));
+  setup.names = {}; setup.copyNames = {};
+  // Preserve the other controls, including any edits awaiting a valid render.
+  for (const art of catalog) {
+    $(`qty-${art.id}`).value = 0;
+    $(`name-${art.id}`).value = '';
+    $(`copy-names-${art.id}`).replaceChildren();
+  }
+  pageIndex = 0; requestRender(); tell('Setup cleared.');
+});
 $('load-file').addEventListener('change', async () => {
   const file = $('load-file').files[0]; if (!file) return;
   try {
