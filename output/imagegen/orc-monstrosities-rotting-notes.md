@@ -1,6 +1,6 @@
 # Rotting Troll artwork revision
 
-Edited with the built-in image generation tool from the original two-Troll artwork. Replaced `artwork/Orcs/orc-monstrosities.png` at the user's request. Keeps two Trolls on one 23 mm upright and a 40 × 20 mm base. The Giant artwork is unchanged.
+Edited with the built-in image generation tool from the original two-Troll artwork. Replaced `artwork/Orcs/orc-trolls.png` at the user's request. Keeps two Trolls on one 23 mm upright and a 40 × 20 mm base. The Giant artwork is unchanged.
 
 ## Final edit prompt
 

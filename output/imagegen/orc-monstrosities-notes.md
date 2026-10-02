@@ -1,6 +1,6 @@
-# Orc Monstrosities: two Trolls
+# Orc Trolls: a monstrosities unit
 
-Generated with the built-in image generation tool using the Giant artwork (originally named `orc-troll.png`, now `artwork/Orcs/orc-giant.png`) as a style reference. Final asset: `artwork/Orcs/orc-monstrosities.png`.
+Generated with the built-in image generation tool using the Giant artwork (originally named `orc-troll.png`, now `artwork/Orcs/orc-giant.png`) as a style reference. Final asset: `artwork/Orcs/orc-trolls.png`.
 
 Two smaller Trolls side by side on one 23 mm tall upright, on a 40 × 20 mm base. Fixed panel height and one upright are independent of infantry settings. Unfolded strip: 40 × 66 mm. Artwork retains its proportions; reverse uses the infantry silhouette/blank setting. Optional 38 × 4 mm nameplate.
 
