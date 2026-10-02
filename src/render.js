@@ -33,7 +33,7 @@ async function panelImage(strip, variant, silhouetteColor = '#cccccc') {
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.scale(big.width / strip.width, big.height / strip.panelHeight);
     let dw = strip.width - 1, dh = strip.panelHeight - 1;
-    if (strip.art.kind === 'Mounted') {
+    if (strip.art.kind === 'Mounted' || strip.art.preserveAspect) {
       const ratio = Math.min(dw / source.width, dh / source.height);
       dw = source.width * ratio; dh = source.height * ratio;
     }

@@ -79,6 +79,70 @@ class WorkshopTests(unittest.TestCase):
             self.assertTrue(s['contiguous'])
             self.assertEqual(set(s['variants']), {'mirror' if mounted else 'silhouette'})
 
+    def test_giant_fixed_tall_panel_and_export(self):
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, makeStrip, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const art = catalog.find(a=>a.id==='orc-troll'), setup = defaultSetup();
+          setup.quantities = Object.fromEntries(catalog.map(a=>[a.id,a===art?1:0]));
+          setup.nameplates = true;
+          const strips = [1,2,4].flatMap(ranks=>[10,14.5,30].map(infantryHeight=>{
+            const s=makeStrip(art,{...setup,ranks,infantryHeight});
+            return {base:[s.baseWidth,s.baseDepth],width:s.width,height:s.height,count:s.count,
+              panelHeight:s.panelHeight,ground:s.sections.filter(x=>x.kind==='ground').reduce((n,x)=>n+x.height,0)};
+          }));
+          const exports = [];
+          for (const reverse of ['silhouette','blank']) {
+            const layout=layoutSetup({...setup,reverse}), assets=await prepareArtwork(layout);
+            exports.push({pdf:(await createPDF(layout,assets)).length,assets:assets.size,
+              label:layout.pages.flat().find(s=>s.kind==='nameplate').width,
+              back:layout.pages.flat().find(s=>s.kind!=='nameplate').sections.find(s=>s.side==='back').variant});
+          }
+          return {strips,exports,preserveAspect:art.preserveAspect};
+        }''')
+        self.assertTrue(result['preserveAspect'])
+        for strip in result['strips']:
+            self.assertEqual(strip, dict(base=[40,20], width=40, height=90, count=1,
+                                         panelHeight=35, ground=20))
+        for exported, reverse in zip(result['exports'], ['silhouette', 'blank']):
+            self.assertGreater(exported['pdf'], 1000)
+            self.assertEqual(exported['label'], 38)
+            self.assertEqual(exported['back'], reverse)
+            self.assertEqual(exported['assets'], 2 if reverse=='silhouette' else 1)
+
+    def test_monstrosities_two_trolls_panel_and_export(self):
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, makeStrip, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const art = catalog.find(a=>a.id==='orc-monstrosities'), setup = defaultSetup();
+          setup.quantities = Object.fromEntries(catalog.map(a=>[a.id,a===art?1:0]));
+          setup.nameplates = true;
+          const strips = [1,2,4].flatMap(ranks=>[10,14.5,30].map(infantryHeight=>{
+            const s=makeStrip(art,{...setup,ranks,infantryHeight});
+            return {base:[s.baseWidth,s.baseDepth],width:s.width,height:s.height,count:s.count,
+              panelHeight:s.panelHeight,ground:s.sections.filter(x=>x.kind==='ground').reduce((n,x)=>n+x.height,0)};
+          }));
+          const exports = [];
+          for (const reverse of ['silhouette','blank']) {
+            const layout=layoutSetup({...setup,reverse}), assets=await prepareArtwork(layout);
+            exports.push({pdf:(await createPDF(layout,assets)).length,assets:assets.size,
+              label:layout.pages.flat().find(s=>s.kind==='nameplate').width,
+              back:layout.pages.flat().find(s=>s.kind!=='nameplate').sections.find(s=>s.side==='back').variant});
+          }
+          return {strips,exports,preserveAspect:art.preserveAspect};
+        }''')
+        self.assertTrue(result['preserveAspect'])
+        for strip in result['strips']:
+            self.assertEqual(strip, dict(base=[40,20], width=40, height=66, count=1,
+                                         panelHeight=23, ground=20))
+        for exported, reverse in zip(result['exports'], ['silhouette', 'blank']):
+            self.assertGreater(exported['pdf'], 1000)
+            self.assertEqual(exported['label'], 38)
+            self.assertEqual(exported['back'], reverse)
+            self.assertEqual(exported['assets'], 2 if reverse=='silhouette' else 1)
+
     def test_rohan_hero_square_base_and_export(self):
         self.page.locator('[data-filter="Rohan"]').click()
         self.assertEqual(self.page.locator('.art-card:visible').count(), 5)
@@ -362,7 +426,7 @@ class WorkshopTests(unittest.TestCase):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
         self.page.locator('[data-filter="Orcs"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 7)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 9)
         self.assertEqual(self.page.locator('.art-card:visible:not([data-faction="Orcs"])').count(), 0)
         self.assertEqual(self.page.locator('#qty-gondor-swords').input_value(), '1')
         self.page.locator('#qty-orc-axes').fill('20')

@@ -65,8 +65,8 @@ export function makeStrip(art, setup, copy = 1) {
   const mounted = art.kind === 'Mounted';
   const baseWidth = art.baseWidth ?? 40, baseDepth = art.baseDepth ?? 20;
   const width = mounted ? baseDepth : baseWidth, span = mounted ? baseWidth : baseDepth;
-  const count = art.hero ? 1 : mounted ? setup.riders : setup.ranks;
-  const panelHeight = mounted ? setup.mountedHeight : setup.infantryHeight;
+  const count = art.uprightCount ?? (art.hero ? 1 : mounted ? setup.riders : setup.ranks);
+  const panelHeight = art.panelHeight ?? (mounted ? setup.mountedHeight : setup.infantryHeight);
   const pitch = span / count, sections = [], folds = [];
   let y = 0;
   const add = (kind, height, extra = {}) => { sections.push({kind, y, height, ...extra}); y += height; };

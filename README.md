@@ -8,6 +8,8 @@ Gondor also includes generic mounted heroes: a sword-bearing captain and a stand
 
 Orcs include two generic mounted heroes: an axe-wielding chieftain on a charging warg and a herald with a ragged wolf banner. Both use the same 20 × 20 mm hero bases, single mirrored upright, and optional 18 × 4 mm nameplates.
 
+The Orc faction also has a single Giant on a **40 × 20 mm base**, with one **35 mm tall panel** independent of infantry ranks and panel height. Its artwork keeps its proportions, and its reverse follows the infantry silhouette/blank setting. The unfolded strip is **40 × 90 mm**, with an optional **38 × 4 mm** nameplate. **Monstrosities** adds two smaller Trolls side by side on one **23 mm tall upright**, also on a **40 × 20 mm base**; its unfolded strip is **40 × 66 mm** and uses the same reverse and nameplate options.
+
 The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers and horse archers, plus orc axemen, mixed warriors, foot archers, warg riders and warg archers. Foot units are frontal ranks of eight figures; mounted units use side profiles mirrored on their reverse faces.
 
 ## Run
