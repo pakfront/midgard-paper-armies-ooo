@@ -9,4 +9,4 @@ export const catalog = [
   {id: 'gondor-horse-archers', name: 'Gondor mounted archers', faction: 'Gondor', kind: 'Mounted', height: 20, file: 'gondor-mounted-archer-profile.png', note: 'Clean style · mirrored horse archer profiles'},
   {id: 'orc-archers', name: 'Orc archers', faction: 'Orcs', kind: 'Infantry', height: 13.5, file: 'orc-archers-clean.png', note: 'Clean style · eight foot archers'},
   {id: 'orc-warg-archers', name: 'Orc mounted archers', shortName: 'Orc warg archers', faction: 'Orcs', kind: 'Mounted', height: 20, file: 'orc-mounted-archer-profile.png', note: 'Clean style · mirrored warg archer profiles'},
-].map(art => ({...art, path: `output/imagegen/${art.file}`}));
+].map(art => ({...art, path: `artwork/${art.faction}/${art.file}`}));

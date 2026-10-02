@@ -14,7 +14,7 @@ python3 serve.py
 
 Open <http://localhost:8000>. Use `--port 8080` to choose another port. The helper binds to localhost and disables caching while working on artwork.
 
-The site also works with `python3 -m http.server 8000` or any static web host. Serve the complete directory, including `src/`, `vendor/`, and `output/imagegen/`. Python only serves files: PDF generation, image preparation, and setup storage all run in the browser. There is no build step, backend, API key, or runtime CDN dependency. Opening `index.html` directly with `file://` is not supported because the site uses JavaScript modules.
+The site also works with `python3 -m http.server 8000` or any static web host. Serve the complete directory, including `src/`, `vendor/`, and `artwork/`. Python only serves files: PDF generation, image preparation, and setup storage all run in the browser. There is no build step, backend, API key, or runtime CDN dependency. Opening `index.html` directly with `file://` is not supported because the site uses JavaScript modules.
 
 ## Use
 
@@ -62,7 +62,8 @@ This version uses rectangular upright panels so the figure background color rema
 - `src/catalog.js`: bundled artwork catalog.
 - `vendor/`: locally bundled pdf-lib 1.17.1 and its MIT license, taken from the neighboring midgard-sticker-maker project's vendor folder.
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
-- `output/imagegen/`: the PNGs used by the catalog and their artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`, and foot/mounted archer prompts in `archer-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
+- `artwork/Gondor/` and `artwork/Orcs/`: approved PNGs used by the catalog, organized by faction. All current images are approved.
+- `output/imagegen/`: artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`, and foot/mounted archer prompts in `archer-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
 
 The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Paper Army Standees.
 

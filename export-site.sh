@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 ref="${1:-HEAD}"
 pages_dir="${PAGES_DIR:-../pakfront.github.io}"
 target="$pages_dir/paper-army-standees"
-paths=(index.html src vendor output/imagegen)
+paths=(index.html src vendor artwork)
 
 if [ ! -d "$pages_dir/.git" ]; then
     echo "Error: $pages_dir is not a git repository" >&2
