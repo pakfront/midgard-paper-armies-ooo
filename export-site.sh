@@ -32,6 +32,11 @@ trap 'rm -rf "$staging"' EXIT
 
 git archive "$ref" -- "${paths[@]}" | tar -x -C "$staging"
 echo "$ref $sha" > "$staging/version.txt"
+# The Pages repository tracks PNGs with Git LFS globally. Static hosts serve
+# LFS pointer text instead of image bytes, so opt this app folder out of LFS.
+cat > "$staging/.gitattributes" <<'ATTRIBUTES'
+*.png -filter -diff -merge
+ATTRIBUTES
 
 rm -rf "$target"
 mkdir -p "$target"
