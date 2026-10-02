@@ -14,4 +14,8 @@ export const catalog = [
   {id: 'rohan-guard', name: 'Rohan Royal Guard', faction: 'Rohan', kind: 'Mounted', file: 'rohan-royal-guard-profile.png', note: 'Clean style · mounted Royal Guard · 40 × 20 mm'},
   {id: 'rohan-charging-riders', name: 'Rohan charging riders', shortName: 'Rohan charging riders', faction: 'Rohan', kind: 'Mounted', file: 'rohan-charging-rider-profile.png', note: 'Charging variant · galloping horse · leveled lance · 40 × 20 mm'},
   {id: 'rohan-eowyn', name: 'Éowyn', faction: 'Rohan', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'eowyn-mounted-profile.png', note: 'Mounted hero · one upright · 20 × 20 mm'},
+  {id: 'gondor-captain', name: 'Gondor captain', faction: 'Gondor', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'gondor-captain-profile.png', note: 'Generic mounted hero · sword · one upright · 20 × 20 mm'},
+  {id: 'gondor-standard-bearer', name: 'Gondor herald', shortName: 'Gondor herald', faction: 'Gondor', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'gondor-standard-bearer-profile.png', note: 'Generic mounted standard bearer · banner · one upright · 20 × 20 mm'},
+  {id: 'gondor-captain-charging', name: 'Charging captain', faction: 'Gondor', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'gondor-captain-charging-profile.png', note: 'Gondor hero · galloping horse · raised sword · 20 × 20 mm'},
+  {id: 'gondor-herald-rearing', name: 'Rearing herald', faction: 'Gondor', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'gondor-herald-rearing-profile.png', note: 'Gondor hero · rearing horse · billowing banner · 20 × 20 mm'},
 ].map(art => ({...art, path: `artwork/${art.faction}/${art.file}`}));
