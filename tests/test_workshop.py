@@ -258,6 +258,7 @@ class WorkshopTests(unittest.TestCase):
     def test_archer_units_load_legacy_setups_and_export_pdf(self):
         archer_ids = ['gondor-archers', 'gondor-horse-archers', 'orc-archers', 'orc-warg-archers']
         self.page.locator('#load-file').set_input_files(str(ROOT / 'examples/starter-setup.json'))
+        self.page.wait_for_function("document.getElementById('load-file').value === ''")
         self.ready()
         for art_id in archer_ids:
             expect(self.page.locator(f'#qty-{art_id}')).to_have_value('0')
@@ -265,6 +266,10 @@ class WorkshopTests(unittest.TestCase):
             self.page.locator(f'#qty-{art_id}').fill('0')
         for art_id in archer_ids:
             self.page.locator(f'#qty-{art_id}').fill('1')
+        self.page.wait_for_function('''ids => {
+          const saved = JSON.parse(localStorage.getItem('uprights.setup.v1'));
+          return saved && Object.entries(saved.quantities).every(([id, count]) => count === (ids.includes(id) ? 1 : 0));
+        }''', arg=archer_ids)
         self.ready()
         result = self.page.evaluate('''async () => {
           const {layoutSetup}=await import('./src/model.js');
@@ -357,7 +362,7 @@ class WorkshopTests(unittest.TestCase):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
         self.page.locator('[data-filter="Orcs"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 5)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 7)
         self.assertEqual(self.page.locator('.art-card:visible:not([data-faction="Orcs"])').count(), 0)
         self.assertEqual(self.page.locator('#qty-gondor-swords').input_value(), '1')
         self.page.locator('#qty-orc-axes').fill('20')

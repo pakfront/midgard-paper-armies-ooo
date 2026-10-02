@@ -18,4 +18,6 @@ export const catalog = [
   {id: 'gondor-standard-bearer', name: 'Gondor herald', shortName: 'Gondor herald', faction: 'Gondor', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'gondor-standard-bearer-profile.png', note: 'Generic mounted standard bearer · banner · one upright · 20 × 20 mm'},
   {id: 'gondor-captain-charging', name: 'Charging captain', faction: 'Gondor', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'gondor-captain-charging-profile.png', note: 'Gondor hero · galloping horse · raised sword · 20 × 20 mm'},
   {id: 'gondor-herald-rearing', name: 'Rearing herald', faction: 'Gondor', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'gondor-herald-rearing-profile.png', note: 'Gondor hero · rearing horse · billowing banner · 20 × 20 mm'},
+  {id: 'orc-chieftain', name: 'Orc chieftain', faction: 'Orcs', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'orc-chieftain-profile.png', note: 'Mounted hero · charging warg · raised axe · 20 × 20 mm'},
+  {id: 'orc-herald', name: 'Orc herald', faction: 'Orcs', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'orc-herald-profile.png', note: 'Mounted hero · prowling warg · ragged banner · 20 × 20 mm'},
 ].map(art => ({...art, path: `artwork/${art.faction}/${art.file}`}));
