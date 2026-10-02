@@ -21,10 +21,10 @@ async function sourceImage(art) {
   return imageCache.get(art.id);
 }
 
-export function panelKey(strip, variant) { return `${strip.art.id}:${strip.width}:${strip.panelHeight}:${variant}`; }
+export function panelKey(strip, variant, silhouetteColor = '#cccccc') { return `${strip.art.id}:${strip.width}:${strip.panelHeight}:${variant}${variant === 'silhouette' ? ':' + silhouetteColor : ''}`; }
 
-async function panelImage(strip, variant) {
-  const key = panelKey(strip, variant);
+async function panelImage(strip, variant, silhouetteColor = '#cccccc') {
+  const key = panelKey(strip, variant, silhouetteColor);
   if (panelCache.has(key)) return panelCache.get(key);
   const work = (async () => {
     const source = await sourceImage(strip.art);
@@ -40,7 +40,7 @@ async function panelImage(strip, variant) {
     ctx.drawImage(source.image, source.left, source.top, source.width, source.height,
       (strip.width - dw) / 2, strip.panelHeight - .5 - dh, dw, dh);
     if (variant === 'silhouette') {
-      ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = '#000000';
+      ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = silhouetteColor;
       ctx.fillRect(0, 0, strip.width, strip.panelHeight);
     }
     const out = makeCanvas(w, h), ox = out.getContext('2d');
@@ -63,7 +63,7 @@ async function panelImage(strip, variant) {
 export async function prepareArtwork(layout) {
   const jobs = new Map();
   for (const page of layout.pages) for (const strip of page) for (const section of strip.sections) {
-    if (section.kind === 'face' && section.variant !== 'blank') jobs.set(panelKey(strip, section.variant), [strip, section.variant]);
+    if (section.kind === 'face' && section.variant !== 'blank') jobs.set(panelKey(strip, section.variant, layout.setup.silhouetteColor), [strip, section.variant, layout.setup.silhouetteColor]);
   }
   const results = new Map();
   // Decode one panel at a time to limit memory on phones.
@@ -93,7 +93,7 @@ export function pageScene(layout, index) {
       const sy = y + section.y;
       rect(x, sy, w, section.height, section.kind === 'ground' ? setup.groundColor : setup.figureColor);
       if (section.kind === 'face' && section.variant !== 'blank') {
-        ops.push({type: 'image', key: panelKey(strip, section.variant), x, y: sy, w, h: section.height});
+        ops.push({type: 'image', key: panelKey(strip, section.variant, setup.silhouetteColor), x, y: sy, w, h: section.height});
       } else if (section.kind === 'ground' && setup.guides) {
         text('GLUE UNDERSIDE', x + 1, sy + section.height / 2 + .5, 1.45, contrast(setup.groundColor));
       }

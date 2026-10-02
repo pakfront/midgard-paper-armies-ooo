@@ -17,7 +17,7 @@ The site also works with `python3 -m http.server 8000` or any static web host. S
 ## Use
 
 1. Set the number of bases for each unit. The initial sample contains one base each of Gondor swordsmen, Gondor cavalry, orc axemen, and warg riders.
-2. Choose infantry ranks (default two), infantry reverse faces (black silhouettes or blank), and cavalry riders across the frontage (default four). Cavalry always has mirrored profile artwork on opposite faces.
+2. Choose infantry ranks (default two), infantry reverse faces (20% grey silhouettes or blank), and cavalry riders across the frontage (default four). Cavalry always has mirrored profile artwork on opposite faces.
 3. Choose two **setup-wide colors**: ground sections and the background behind figures. Every unit uses the same pair, including blank reverse panels. The background colors are vector fills; the transparent artwork sits above them.
 4. Select A4 or US Letter, orientation, margins, spacing, and fold guides. Oversized strips block export with a message; reduce rider/rank count or panel height, or use a paper orientation with enough room. For example, a default four-rider strip needs portrait paper.
 5. Download the PDF and print on **one side** at **100% / actual size**. Disable fit-to-page and measure the printed 40 mm ruler.
@@ -74,4 +74,4 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-Tests start their own local static server and check fold directions and ground totals, pixel alignment of mirrored faces, black silhouette alpha, pagination and overlap, setup color save/load, PDF page dimensions and color commands, invalid/empty setups, and mobile layout. A physical fold test is still needed to assess your paper and printer.
+Tests start their own local static server and check fold directions and ground totals, pixel alignment of mirrored faces, grey silhouette alpha, pagination and overlap, setup color save/load, PDF page dimensions and color commands, invalid/empty setups, and mobile layout. A physical fold test is still needed to assess your paper and printer.

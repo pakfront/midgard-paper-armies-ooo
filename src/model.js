@@ -3,7 +3,7 @@ import {pack} from './packing.js';
 
 export function defaultSetup() {
   return {version: 1, ranks: 2, riders: 4, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
-    groundColor: '#b6bc91', figureColor: '#ffffff', paper: 'a4', orientation: 'portrait', margin: 10, gap: 4, guides: true,
+    groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'a4', orientation: 'portrait', margin: 10, gap: 4, guides: true,
     quantities: Object.fromEntries(catalog.map((art, i) => [art.id, i < 4 ? 1 : 0]))};
 }
 
@@ -22,7 +22,8 @@ export function validateSetup(input) {
     if (!values.includes(input[key])) throw Error(`Invalid ${key}.`);
     result[key] = input[key];
   }
-  for (const key of ['groundColor', 'figureColor']) {
+  for (const key of ['groundColor', 'figureColor', 'silhouetteColor']) {
+    if (key === 'silhouetteColor' && input[key] === undefined) continue;
     if (typeof input[key] !== 'string' || !/^#[0-9a-f]{6}$/i.test(input[key])) throw Error(`Invalid ${key}.`);
     result[key] = input[key].toLowerCase();
   }

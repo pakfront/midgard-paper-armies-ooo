@@ -79,7 +79,7 @@ class WorkshopTests(unittest.TestCase):
             self.assertTrue(s['contiguous'])
             self.assertEqual(set(s['variants']), {'mirror' if mounted else 'silhouette'})
 
-    def test_opposite_faces_align_and_silhouettes_are_black(self):
+    def test_opposite_faces_align_and_silhouettes_are_grey(self):
         result = self.page.evaluate('''async () => {
           const {defaultSetup,layoutSetup} = await import('./src/model.js');
           const {prepareArtwork,panelKey} = await import('./src/render.js');
@@ -91,15 +91,15 @@ class WorkshopTests(unittest.TestCase):
           }
           for(const s of layout.pages.flat()) {
             const variant=s.art.kind==='Mounted'?'mirror':'silhouette';
-            const a=await pixels(assets.get(panelKey(s,'front')).url),b=await pixels(assets.get(panelKey(s,variant)).url);
-            let alphaError=0,colorError=0,nonBlack=0,visible=0;
+            const a=await pixels(assets.get(panelKey(s,'front')).url),b=await pixels(assets.get(panelKey(s,variant,layout.setup.silhouetteColor)).url);
+            let alphaError=0,colorError=0,wrongGrey=0,visible=0;
             for(let y=0;y<a.h;y++) for(let x=0;x<a.w;x++) {
               const i=(y*a.w+x)*4,j=((a.h-1-y)*a.w+x)*4;
               if(Math.abs(a.d[i+3]-b.d[j+3])>1)alphaError++;
-              if(b.d[j+3]>0){visible++;if(b.d[j]||b.d[j+1]||b.d[j+2])nonBlack++;}
+              if(b.d[j+3]>0){visible++;if(b.d[j+3]>128 && [0,1,2].some(k=>Math.abs(b.d[j+k]-204)>2))wrongGrey++;}
               if(variant==='mirror' && [0,1,2].some(k=>Math.abs(a.d[i+k]-b.d[j+k])>1))colorError++;
             }
-            result.push({variant,alphaError,colorError,nonBlack,visible});
+            result.push({variant,alphaError,colorError,wrongGrey,visible});
           }
           return result;
         }''')
@@ -108,7 +108,31 @@ class WorkshopTests(unittest.TestCase):
             self.assertEqual(r['colorError'], 0)
             self.assertGreater(r['visible'], 1000)
             if r['variant'] == 'silhouette':
-                self.assertEqual(r['nonBlack'], 0)
+                self.assertEqual(r['wrongGrey'], 0)
+
+    def test_silhouette_color_rendering_cache_and_legacy_setups(self):
+        self.page.locator('#silhouette-color').fill('#cc3300')
+        self.ready()
+        result = self.page.evaluate("""async () => {
+          const {defaultSetup, validateSetup, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, pageScene} = await import('./src/render.js');
+          const legacy = defaultSetup(); delete legacy.silhouetteColor;
+          const layout = layoutSetup({...defaultSetup(), silhouetteColor:'#cc3300'});
+          const assets = await prepareArtwork(layout);
+          const op = pageScene(layout,0).find(x=>x.type==='image'&&x.key.includes(':silhouette'));
+          const image = new Image(); image.src = assets.get(op.key).url; await image.decode();
+          const c = document.createElement('canvas'); c.width=image.width; c.height=image.height;
+          const ctx=c.getContext('2d'); ctx.drawImage(image,0,0);
+          const pixels=ctx.getImageData(0,0,c.width,c.height).data;
+          let visible=0, wrong=0;
+          for(let i=0;i<pixels.length;i+=4) if(pixels[i+3]>128) {
+            visible++; if(Math.abs(pixels[i]-204)>2||Math.abs(pixels[i+1]-51)>2||pixels[i+2]>2) wrong++;
+          }
+          return {visible,wrong,legacy:validateSetup(legacy).silhouetteColor};
+        }""")
+        self.assertGreater(result['visible'], 1000)
+        self.assertEqual(result['wrong'], 0)
+        self.assertEqual(result['legacy'], '#cccccc')
 
     def test_packing_is_within_margins_and_does_not_overlap(self):
         result = self.page.evaluate('''async () => {
@@ -138,6 +162,7 @@ class WorkshopTests(unittest.TestCase):
     def test_setup_colors_round_trip_and_blank_backs(self):
         self.page.locator('#ground-color').fill('#245632')
         self.page.locator('#figure-color').fill('#e8dbb4')
+        self.page.locator('#silhouette-color').fill('#cc3300')
         self.page.locator('#reverse').select_option('blank')
         self.ready()
         with self.page.expect_download() as saved:
@@ -146,6 +171,7 @@ class WorkshopTests(unittest.TestCase):
         setup = json.loads(payload)
         self.assertEqual(setup['groundColor'], '#245632')
         self.assertEqual(setup['figureColor'], '#e8dbb4')
+        self.assertEqual(setup['silhouetteColor'], '#cc3300')
         self.page.locator('#ground-color').fill('#abcdef')
         self.page.locator('#load-file').set_input_files({'name': 'palette.json', 'mimeType': 'application/json', 'buffer': payload})
         expect(self.page.locator('#ground-color')).to_have_value('#245632')
@@ -154,6 +180,8 @@ class WorkshopTests(unittest.TestCase):
         self.ready()
         expect(self.page.locator('#figure-color')).to_have_value('#e8dbb4')
         expect(self.page.locator('#reverse')).to_have_value('blank')
+        expect(self.page.locator('#silhouette-color')).to_have_value('#cc3300')
+        expect(self.page.locator('#silhouette-color')).to_be_disabled()
         result = self.page.evaluate('''async () => {
           const {layoutSetup}=await import('./src/model.js'),{pageScene}=await import('./src/render.js');
           const s=JSON.parse(localStorage.getItem('uprights.setup.v1')),l=layoutSetup(s);

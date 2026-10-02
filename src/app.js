@@ -4,7 +4,7 @@ import {prepareArtwork, previewSVG, createPDF} from './render.js';
 
 const $ = id => document.getElementById(id), storageKey = 'uprights.setup.v1';
 const fields = {ranks: 'ranks', riders: 'riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
-  groundColor: 'ground-color', figureColor: 'figure-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides'};
+  groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides'};
 const numeric = new Set(['ranks', 'riders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
 let setup = defaultSetup(), currentLayout = null, currentAssets = null, pageIndex = 0, revision = 0, timer, exporting = false;
 
@@ -43,6 +43,8 @@ function counts() {
   $('base-count').textContent = `${total} ${total === 1 ? 'base' : 'bases'}`;
   for (const art of catalog) document.querySelector(`[data-art="${art.id}"]`).classList.toggle('selected', setup.quantities[art.id] > 0);
   $('ground-value').textContent = setup.groundColor; $('figure-value').textContent = setup.figureColor;
+  $('silhouette-value').textContent = setup.silhouetteColor;
+  $('silhouette-color').disabled = setup.reverse !== 'silhouette';
 }
 
 function diagram() {
@@ -118,7 +120,7 @@ function download(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 $('save').addEventListener('click', () => {
-  try { const valid = readControls(); download(new Blob([JSON.stringify(valid, null, 2) + '\n'], {type: 'application/json'}), 'uprights-setup.json'); tell('Setup saved, including both background colors.'); }
+  try { const valid = readControls(); download(new Blob([JSON.stringify(valid, null, 2) + '\n'], {type: 'application/json'}), 'uprights-setup.json'); tell('Setup saved, including all colors.'); }
   catch (error) { tell(error.message, true); }
 });
 $('load').addEventListener('click', () => $('load-file').click());
