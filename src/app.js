@@ -1,4 +1,4 @@
-import {catalog} from './catalog.js';
+import {catalog, eras} from './catalog.js';
 import {defaultSetup, validateSetup, layoutSetup, makeStrip} from './model.js';
 import {prepareArtwork, previewSVG, createPDF} from './render.js';
 
@@ -17,7 +17,7 @@ try {
 } catch { tell('The saved browser setup could not be read. Started with the sample army; you can load a saved setup file.', true); }
 
 for (const art of catalog) {
-  const card = document.createElement('article'); card.className = 'art-card'; card.dataset.art = art.id; card.dataset.faction = art.faction;
+  const card = document.createElement('article'); card.className = 'art-card'; card.dataset.art = art.id; card.dataset.faction = art.faction; card.dataset.era = art.era;
   card.innerHTML = `<div class="art-preview"><img src="${art.path}" alt="${art.name}${art.kind === 'Mounted' ? ' in side profile' : ''}" loading="lazy"></div><div class="card-body"><h3>${art.name}</h3><p>${art.note}</p><div class="quantity"><label for="qty-${art.id}">Bases</label><button data-delta="-1" aria-label="Remove one ${art.name} base">−</button><input id="qty-${art.id}" type="number" min="0" max="50" step="1" aria-label="${art.name} bases"><button data-delta="1" aria-label="Add one ${art.name} base">+</button></div></div>`;
   for (const button of card.querySelectorAll('[data-delta]')) button.addEventListener('click', () => {
     const input = card.querySelector('input'); input.value = Math.max(0, Math.min(50, (Number(input.value) || 0) + Number(button.dataset.delta))); requestRender();
@@ -138,10 +138,34 @@ async function render(id) {
 }
 
 for (const id of Object.values(fields)) $(id).addEventListener('input', requestRender);
-for (const button of document.querySelectorAll('[data-filter]')) button.addEventListener('click', () => {
-  for (const b of document.querySelectorAll('[data-filter]')) { b.classList.toggle('active', b === button); b.setAttribute('aria-pressed', String(b === button)); }
-  for (const card of document.querySelectorAll('.art-card')) card.hidden = button.dataset.filter !== 'All' && card.dataset.faction !== button.dataset.filter;
-});
+// Browsing filters never change selected quantities or the print layout.
+let factionFilter = 'All';
+for (const eraId of new Set(catalog.map(art => art.era))) {
+  $('era').add(new Option(eras.find(era => era.id === eraId)?.name || eraId, eraId));
+}
+function filterArtwork() {
+  for (const card of document.querySelectorAll('.art-card')) {
+    card.hidden = card.dataset.era !== $('era').value || (factionFilter !== 'All' && card.dataset.faction !== factionFilter);
+  }
+  for (const button of $('faction-filters').children) {
+    const active = button.dataset.filter === factionFilter;
+    button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
+  }
+}
+function updateFactions() {
+  const factions = [...new Set(catalog.filter(art => art.era === $('era').value).map(art => art.faction))].sort();
+  if (!factions.includes(factionFilter)) factionFilter = 'All';
+  $('faction-filters').replaceChildren();
+  for (const faction of ['All', ...factions]) {
+    const button = document.createElement('button'); button.dataset.filter = faction;
+    button.textContent = faction === 'All' ? 'All units' : faction;
+    button.addEventListener('click', () => { factionFilter = faction; filterArtwork(); });
+    $('faction-filters').append(button);
+  }
+  filterArtwork();
+}
+$('era').addEventListener('change', updateFactions);
+updateFactions();
 $('previous').addEventListener('click', () => { if (currentLayout) { pageIndex--; showPage(); } });
 $('next').addEventListener('click', () => { if (currentLayout) { pageIndex++; showPage(); } });
 

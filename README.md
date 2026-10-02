@@ -12,6 +12,8 @@ The Orc faction also has a single slovenly, human-looking Giant on a **40 × 20 
 
 The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers and horse archers, plus orc axemen, mixed warriors, foot archers, warg riders and warg archers. Foot units are frontal ranks of eight figures; mounted units use side profiles mirrored on their reverse faces.
 
+All current artwork belongs to the **Middle-earth · Third Age** era (`middle-earth-third-age`). Era and faction filters only affect browsing; selected bases remain in the print setup. Catalog entries declare their era, and the app builds the available era and faction choices from the catalog. Artwork files remain organized by faction.
+
 ## Unit types
 
 | Type | Figures per base | Base size |
@@ -37,7 +39,7 @@ The site also works with `python3 -m http.server 8000` or any static web host. S
 
 ## Use
 
-1. Set the number of bases for each unit. The initial sample contains one base each of Gondor swordsmen, Gondor cavalry, orc axemen, and warg riders.
+1. Select an **era**, then filter by faction and set the number of bases for each unit. The initial sample contains one base each of Gondor swordsmen, Gondor cavalry, orc axemen, and warg riders.
 2. Optionally enable **nameplates** under the unit catalog. Set a unit name or expand **Individual base names** for copy overrides. Each unit base gets a separate **38 × 4 mm** (heroes **18 × 4 mm**) white label with black text and a cut outline. Blank fields use the unit/artwork name. Captions match labels to artwork and base numbers. Cut and glue labels onto your bases; test the placement on your chosen base first. Text fits from 8 pt down to 6 pt; names that do not fit block export with a request to shorten them. Latin letters (including common accents), numbers and punctuation are supported.
 3. Choose infantry ranks (default two), infantry reverse faces (20% grey silhouettes or blank), and cavalry riders across the frontage (default four). Cavalry always has mirrored profile artwork on opposite faces.
 4. Choose two **setup-wide colors**: ground sections and the background behind figures. Every unit uses the same pair, including blank reverse panels. The background colors are vector fills; the transparent artwork sits above them.

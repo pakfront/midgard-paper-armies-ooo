@@ -6,3 +6,5 @@
 @media(max-width:600px){main{padding:20px 14px}.masthead{padding:20px}.mast-note{font-size:10px}h1{font-size:38px}.eyebrow{font-size:8px}.intro{display:block}.intro h2{font-size:25px}.intro p{font-size:13px}.project-actions{margin-top:16px}.panel{padding:16px}.catalog{grid-template-columns:1fr 1fr;gap:9px}.card-body{padding:9px}.settings-grid{gap:12px}.sheet-stage{padding:10px}h2{font-size:19px}.badge{font-size:8px}.legend{gap:10px}footer{display:block;padding:12px 20px 25px}footer span{display:block;margin-top:8px}}
 
 .unit-names{margin-top:12px;font-size:11px}.unit-names label{display:block;margin-top:8px}.unit-names input{margin-top:4px;font-size:12px;min-width:0}.unit-names details{margin-top:9px}.unit-names summary{cursor:pointer;color:var(--muted)}
+
+.era-filter{display:block;font-size:12px;font-weight:600;margin-bottom:12px}.era-filter select{display:block;margin-top:6px}
