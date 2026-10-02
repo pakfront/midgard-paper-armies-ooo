@@ -60,7 +60,7 @@ This version uses rectangular upright panels so the figure background color rema
 - `src/catalog.js`: bundled artwork catalog.
 - `vendor/`: locally bundled pdf-lib 1.17.1 and its MIT license, taken from the neighboring midgard-sticker-maker project's vendor folder.
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
-- `output/imagegen/cavalry-profile-notes.md`: full prompts for the new side-profile horseman and warg rider, created with the built-in image generation tool. Source PNGs are in the same directory; earlier artwork remains unchanged.
+- `output/imagegen/`: the six PNGs used by the catalog and their artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
 
 The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Paper Army Standees.
 

@@ -1,8 +1,8 @@
 # Orc warband simplified revision (v2)
 
-Created with the built-in image generation tool, editing the original warband. Original assets preserved.
+Created with the built-in image generation tool, editing the original warband. The original assets are available in Git history.
 
-Print `orc-warband-unit-v2-print.svg` at 100% / actual size. Same layout dimensions as v1: artwork 40 mm wide and 14.135922 mm tall, approximately 10 mm average body height, with a 2 mm margin. SVG embeds the unmodified transparent PNG and uses the original miniature proportions.
+The workshop uses `orc-warband-unit-v2.png` for the orc warband catalog entry. Download a PDF from the workshop and print at 100% / actual size. The prototype SVG and original artwork are available in Git history.
 
 Simplified surface texture and structural lines; green skin, cool blue-gray steel, warm rust/ochre cloth, brown leather. Visually inspected; physical print performance still requires a test print.
 
