@@ -2,7 +2,7 @@ import {catalog} from './catalog.js';
 import {pack} from './packing.js';
 
 export function defaultSetup() {
-  return {version: 1, ranks: 2, riders: 4, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
+  return {version: 1, nameplates: false, names: {}, copyNames: {}, ranks: 2, riders: 4, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
     groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'a4', orientation: 'portrait', margin: 10, gap: 4, guides: true,
     quantities: Object.fromEntries(catalog.map((art, i) => [art.id, i < 4 ? 1 : 0]))};
 }
@@ -30,6 +30,25 @@ export function validateSetup(input) {
   if (typeof input.guides !== 'boolean') throw Error('Invalid fold guide setting.');
   result.guides = input.guides;
   if (!input.quantities || typeof input.quantities !== 'object' || Array.isArray(input.quantities)) throw Error('Missing unit quantities.');
+  if (input.nameplates !== undefined && typeof input.nameplates !== 'boolean') throw Error('Invalid nameplate setting.');
+  result.nameplates = input.nameplates ?? false;
+  for (const key of ['names', 'copyNames']) {
+    const values = input[key] ?? {};
+    if (!values || typeof values !== 'object' || Array.isArray(values)) throw Error(`Invalid ${key}.`);
+    for (const art of catalog) {
+      const validateName = value => {
+        if (typeof value !== 'string' || value.length > 80 || /[^\x20-\x7e\xa0-\xff€‘’“”–—…]/u.test(value))
+          throw Error(`${art.name}: use a single-line name up to 80 characters with Latin letters, numbers and punctuation.`);
+        return value.trim();
+      };
+      if (key === 'names') result.names[art.id] = validateName(values[art.id] ?? '');
+      else {
+        const copies = values[art.id] ?? [];
+        if (!Array.isArray(copies) || copies.length > 50) throw Error(`${art.name}: invalid individual base names.`);
+        result.copyNames[art.id] = Array.from(copies, value => validateName(value ?? ''));
+      }
+    }
+  }
   let total = 0;
   for (const art of catalog) {
     const n = input.quantities[art.id] ?? 0;
@@ -65,5 +84,10 @@ export function makeStrip(art, setup, copy = 1) {
 export function layoutSetup(setup) {
   setup = validateSetup(setup);
   const items = catalog.flatMap(art => Array.from({length: setup.quantities[art.id]}, (_, i) => makeStrip(art, setup, i + 1)));
-  return {...pack(items, setup), setup, total: items.length};
+  const labels = setup.nameplates ? items.map(strip => ({
+    kind: 'nameplate', art: strip.art, copy: strip.copy,
+    name: setup.copyNames[strip.art.id]?.[strip.copy - 1] || setup.names[strip.art.id] || strip.art.name,
+    width: 38, height: 4, sections: []
+  })) : [];
+  return {...pack([...items, ...labels], setup), setup, total: items.length, labelTotal: labels.length};
 }

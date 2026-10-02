@@ -4,7 +4,7 @@ import {prepareArtwork, previewSVG, createPDF} from './render.js';
 
 const $ = id => document.getElementById(id), storageKey = 'uprights.setup.v1';
 const fields = {ranks: 'ranks', riders: 'riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
-  groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides'};
+  groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides', nameplates: 'nameplates'};
 const numeric = new Set(['ranks', 'riders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
 let setup = defaultSetup(), currentLayout = null, currentAssets = null, pageIndex = 0, revision = 0, timer, exporting = false;
 
@@ -23,18 +23,49 @@ for (const art of catalog) {
     const input = card.querySelector('input'); input.value = Math.max(0, Math.min(50, (Number(input.value) || 0) + Number(button.dataset.delta))); requestRender();
   });
   card.querySelector('input').addEventListener('input', requestRender);
+  const naming = document.createElement('div'); naming.className = 'unit-names';
+  const label = document.createElement('label'); label.textContent = 'Unit name';
+  const input = document.createElement('input'); input.id = `name-${art.id}`; input.type = 'text'; input.maxLength = 80;
+  input.placeholder = art.name; input.addEventListener('input', requestRender); label.append(input); naming.append(label);
+  const details = document.createElement('details'); details.innerHTML = '<summary>Individual base names</summary>';
+  const copies = document.createElement('div'); copies.id = `copy-names-${art.id}`; details.append(copies); naming.append(details);
+  card.querySelector('.card-body').append(naming);
   $('catalog').append(card);
 }
 
 function writeControls() {
-  for (const [key, id] of Object.entries(fields)) { if (key === 'guides') $(id).checked = setup[key]; else $(id).value = setup[key]; }
-  for (const art of catalog) $(`qty-${art.id}`).value = setup.quantities[art.id];
+  for (const [key, id] of Object.entries(fields)) { if (key === 'guides' || key === 'nameplates') $(id).checked = setup[key]; else $(id).value = setup[key]; }
+  for (const art of catalog) {
+    $(`qty-${art.id}`).value = setup.quantities[art.id];
+    $(`name-${art.id}`).value = setup.names[art.id] || '';
+    $(`copy-names-${art.id}`).replaceChildren();
+  }
+  syncCopyControls();
+}
+function syncCopyControls() {
+  for (const art of catalog) {
+    const container = $(`copy-names-${art.id}`), count = setup.quantities[art.id];
+    // Keep hidden copies so reducing and restoring quantities preserves their names.
+    for (let i = container.children.length; i < count; i++) {
+      const label = document.createElement('label'); label.textContent = `Base ${i + 1}`;
+      const input = document.createElement('input'); input.type = 'text'; input.maxLength = 80;
+      input.id = `copy-name-${art.id}-${i + 1}`; input.placeholder = 'Use unit name';
+      input.value = setup.copyNames[art.id]?.[i] || ''; input.addEventListener('input', requestRender);
+      label.append(input); container.append(label);
+    }
+    for (const [i, label] of [...container.children].entries()) label.hidden = i >= count;
+    container.closest('.unit-names').hidden = !setup.nameplates;
+  }
 }
 function readControls() {
-  const value = {version: 1, quantities: {}};
-  for (const [key, id] of Object.entries(fields)) value[key] = key === 'guides' ? $(id).checked : numeric.has(key) ? ($(id).value === '' ? NaN : Number($(id).value)) : $(id).value;
+  const value = {version: 1, quantities: {}, names: {}, copyNames: {}};
+  for (const [key, id] of Object.entries(fields)) value[key] = (key === 'guides' || key === 'nameplates') ? $(id).checked : numeric.has(key) ? ($(id).value === '' ? NaN : Number($(id).value)) : $(id).value;
   for (const art of catalog) {
     const input = $(`qty-${art.id}`); value.quantities[art.id] = input.value === '' ? NaN : Number(input.value);
+    value.names[art.id] = $(`name-${art.id}`).value;
+    const copies = [...(setup.copyNames[art.id] || [])];
+    for (const [i, input] of [...$(`copy-names-${art.id}`).querySelectorAll('input')].entries()) copies[i] = input.value;
+    value.copyNames[art.id] = copies;
   }
   return validateSetup(value);
 }
@@ -67,7 +98,7 @@ function diagram() {
   $('fold-description').textContent = `Infantry: ${infantry.width} × ${+infantry.height.toFixed(2)} mm unfolded, ${+infantry.pitch.toFixed(2)} mm between ranks. Cavalry: ${cavalry.width} × ${+cavalry.height.toFixed(2)} mm unfolded, ${+cavalry.pitch.toFixed(2)} mm between riders. Flat feet total 20 mm for infantry and 40 mm for cavalry.`;
 }
 
-$('assembly').innerHTML = '<li>Print the PDF on one side of the paper at <strong>100% / actual size</strong>. Measure the 40 mm rule before cutting.</li><li>Score the dashed and dotted lines, then cut each complete rectangular strip along its solid outline. Keep the connecting ground sections intact.</li><li>Mountain-fold each dashed crest, bringing the unprinted backs of the paired figure panels together. Glue those backs to form a doubled upright.</li><li>Valley-fold the dotted lines at the feet. Glue the undersides of the colored ground sections to your 40 × 20 mm base, with the colored faces showing.</li><li>Infantry ranks run across the 40 mm frontage. Cavalry profiles run along the 20 mm depth, side by side across the frontage. Keep the rectangular figure panels for this first version; the background color fills their open spaces.</li>';
+$('assembly').innerHTML = '<li>Print the PDF on one side of the paper at <strong>100% / actual size</strong>. Measure the 40 mm rule before cutting.</li><li>Score the dashed and dotted lines, then cut each complete rectangular strip along its solid outline. Keep the connecting ground sections intact.</li><li>Mountain-fold each dashed crest, bringing the unprinted backs of the paired figure panels together. Glue those backs to form a doubled upright.</li><li>Valley-fold the dotted lines at the feet. Glue the undersides of the colored ground sections to your 40 × 20 mm base, with the colored faces showing.</li><li>Infantry ranks run across the 40 mm frontage. Cavalry profiles run along the 20 mm depth, side by side across the frontage. Keep the rectangular figure panels for this first version; the background color fills their open spaces.</li><li>If nameplates are enabled, cut the separate 38 × 4 mm rectangles and glue each to its matching base. Captions identify the artwork and base number.</li>';
 
 function status(message, error = false) { $('status').textContent = message; $('status').classList.toggle('error', error); }
 function showPage() {
@@ -84,7 +115,7 @@ function requestRender() {
   clearTimeout(timer); const id = ++revision;
   $('download').disabled = true; currentLayout = null;
   try {
-    setup = readControls(); counts(); diagram();
+    setup = readControls(); syncCopyControls(); counts(); diagram();
     try { localStorage.setItem(storageKey, JSON.stringify(setup)); } catch { tell('Browser storage is unavailable. Use Save setup to keep your settings.'); }
     status('Updating the print layout…');
     timer = setTimeout(() => render(id), 120);
@@ -120,7 +151,7 @@ function download(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 $('save').addEventListener('click', () => {
-  try { const valid = readControls(); download(new Blob([JSON.stringify(valid, null, 2) + '\n'], {type: 'application/json'}), 'uprights-setup.json'); tell('Setup saved, including all colors.'); }
+  try { const valid = readControls(); download(new Blob([JSON.stringify(valid, null, 2) + '\n'], {type: 'application/json'}), 'uprights-setup.json'); tell('Setup saved, including names and colors.'); }
   catch (error) { tell(error.message, true); }
 });
 $('load').addEventListener('click', () => $('load-file').click());

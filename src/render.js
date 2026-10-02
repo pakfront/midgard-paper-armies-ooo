@@ -60,7 +60,30 @@ async function panelImage(strip, variant, silhouetteColor = '#cccccc') {
   try { return await work; } catch (error) { panelCache.delete(key); throw error; }
 }
 
+let labelFont;
+let labelFontPromise;
+async function prepareLabelFont() {
+  labelFontPromise ??= (async () => {
+    const doc = await PDFLib.PDFDocument.create();
+    labelFont = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+  })();
+  await labelFontPromise;
+}
+
+function fittedLabel(strip) {
+  if (!labelFont) throw Error('Nameplate font is not ready.');
+  const point = 72 / 25.4, maxSize = 8 / point, minSize = 6 / point;
+  const naturalWidth = labelFont.widthOfTextAtSize(strip.name, maxSize * point) / point;
+  const size = Math.min(maxSize, maxSize * (strip.width - 2) / Math.max(naturalWidth, .01));
+  if (size < minSize) throw Error(`${strip.art.name} base ${strip.copy}: name is too long for a readable label. Shorten it (minimum 6 pt).`);
+  return {size, textWidth: labelFont.widthOfTextAtSize(strip.name, size * point) / point};
+}
+
 export async function prepareArtwork(layout) {
+  if (layout.setup.nameplates) {
+    await prepareLabelFont();
+    for (const item of layout.pages.flat()) if (item.kind === 'nameplate') fittedLabel(item);
+  }
   const jobs = new Map();
   for (const page of layout.pages) for (const strip of page) for (const section of strip.sections) {
     if (section.kind === 'face' && section.variant !== 'blank') jobs.set(panelKey(strip, section.variant, layout.setup.silhouetteColor), [strip, section.variant, layout.setup.silhouetteColor]);
@@ -84,18 +107,22 @@ export function pageScene(layout, index) {
   const text = (value, x, y, size = 2, color = ink) => ops.push({type: 'text', value, x, y, size, color});
   const line = (x, y, x2, y2, color = ink, thickness = .14, dash = []) => ops.push({type: 'line', x, y, x2, y2, color, thickness, dash});
   rect(0, 0, width, height, '#ffffff');
-  text('UPRIGHTS / 40 x 20 mm bases', margin, margin + 2, 3);
+  text('PAPER ARMY STANDEES / 40 x 20 mm bases', margin, margin + 2, 3);
   text('Print at 100% / actual size. Cut solid outlines; fold dashed crests and dotted feet.', margin, margin + 6, 2);
   for (const strip of layout.pages[index]) {
     const {x, y, width: w, sections} = strip;
-    text(`${strip.art.shortName || strip.name} ${strip.copy}`, x, strip.captionY, w === 20 ? 1.7 : 2);
+    text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? ' / label' : ''}`, x, strip.captionY, w === 20 ? 1.7 : 2);
+    if (strip.kind === 'nameplate') {
+      const {size, textWidth} = fittedLabel(strip);
+      rect(x, y, w, strip.height, '#ffffff', '#59645c');
+      text(strip.name, x + (w - textWidth) / 2, y + strip.height / 2 + size * .35, size, '#000000');
+      continue;
+    }
     for (const section of sections) {
       const sy = y + section.y;
       rect(x, sy, w, section.height, section.kind === 'ground' ? setup.groundColor : setup.figureColor);
       if (section.kind === 'face' && section.variant !== 'blank') {
         ops.push({type: 'image', key: panelKey(strip, section.variant, setup.silhouetteColor), x, y: sy, w, h: section.height});
-      } else if (section.kind === 'ground' && setup.guides) {
-        text('GLUE UNDERSIDE', x + 1, sy + section.height / 2 + .5, 1.45, contrast(setup.groundColor));
       }
     }
     if (setup.guides) for (const fold of strip.folds) {
@@ -131,7 +158,7 @@ export async function createPDF(layout, assets, progress = () => {}) {
   if (!globalThis.PDFLib) throw Error('The PDF library did not load. Reload the page and check the vendor folder.');
   const {PDFDocument, StandardFonts, rgb} = globalThis.PDFLib;
   const doc = await PDFDocument.create(), font = await doc.embedFont(StandardFonts.Helvetica);
-  doc.setTitle('Uprights - folded paper armies'); doc.setCreator('Uprights static workshop');
+  doc.setTitle('Paper Army Standees'); doc.setCreator('Paper Army Standees workshop');
   doc.setSubject('40 x 20 mm bases. Print at 100 percent / actual size.');
   const point = 72 / 25.4, embedded = new Map();
   const color = hex => rgb(...[1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255));

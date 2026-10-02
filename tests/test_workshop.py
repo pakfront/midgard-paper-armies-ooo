@@ -247,6 +247,56 @@ class WorkshopTests(unittest.TestCase):
         expect(self.page.locator('#sheet')).to_contain_text('Choose at least one base')
         expect(self.page.locator('#download')).to_be_disabled()
 
+    def test_nameplates_names_storage_pdf_and_readability(self):
+        self.page.locator('#nameplates').check()
+        self.page.locator('#qty-gondor-swords').fill('2')
+        self.page.locator('#name-gondor-swords').fill('Éowyn & Guard')
+        self.page.locator('[data-art="gondor-swords"] summary').click()
+        self.page.locator('#copy-name-gondor-swords-2').fill('Second Guard')
+        self.ready()
+        with self.page.expect_download() as saved:
+            self.page.locator('#save').click()
+        payload = Path(saved.value.path()).read_bytes()
+        self.page.locator('#name-gondor-swords').fill('Changed')
+        self.page.locator('#load-file').set_input_files({'name': 'names.json', 'mimeType': 'application/json', 'buffer': payload})
+        self.ready()
+        self.page.reload()
+        self.ready()
+        expect(self.page.locator('#name-gondor-swords')).to_have_value('Éowyn & Guard')
+        expect(self.page.locator('#copy-name-gondor-swords-2')).to_have_value('Second Guard')
+        result = self.page.evaluate("""async () => {
+          const {layoutSetup,defaultSetup,validateSetup}=await import('./src/model.js');
+          const {prepareArtwork,pageScene,createPDF}=await import('./src/render.js');
+          const setup=JSON.parse(localStorage.getItem('uprights.setup.v1'));
+          const l=layoutSetup(setup),a=await prepareArtwork(l);
+          const labels=l.pages.flat().filter(x=>x.kind==='nameplate');
+          const ops=l.pages.flatMap((_,i)=>pageScene(l,i));
+          const bytes=await createPDF(l,a), pdf=await PDFLib.PDFDocument.load(bytes);
+          const legacy=defaultSetup();delete legacy.nameplates;delete legacy.names;delete legacy.copyNames;
+          const large=layoutSetup({...setup,quantities:{'gondor-swords':50,'orc-axes':50}});
+          let overlap=false;
+          for(const page of large.pages) for(let i=0;i<page.length;i++) for(const b of page.slice(i+1)) {
+            const a=page[i];if(a.x<b.x+b.width&&b.x<a.x+a.width&&a.y-4<b.y+b.height&&b.y-4<a.y+a.height)overlap=true;
+          }
+          return {names:labels.map(x=>x.name),sizes:labels.map(x=>[x.width,x.height]),
+            text:ops.filter(x=>x.type==='text').map(x=>x.value),pages:pdf.getPageCount(),expected:l.pages.length,
+            legacy:validateSetup(legacy).nameplates,overlap,largeLabels:large.labelTotal};
+        }""")
+        self.assertEqual(result['names'][:2], ['Éowyn & Guard', 'Second Guard'])
+        self.assertEqual(result['sizes'], [[38, 4]] * 5)
+        self.assertIn('Éowyn & Guard', result['text'])
+        self.assertEqual(result['pages'], result['expected'])
+        self.assertFalse(result['legacy'])
+        self.assertFalse(result['overlap'])
+        self.assertEqual(result['largeLabels'], 100)
+        self.page.locator('#name-gondor-swords').fill('W' * 80)
+        expect(self.page.locator('#status')).to_contain_text('too long', timeout=10000)
+        expect(self.page.locator('#download')).to_be_disabled()
+        self.page.locator('#name-gondor-swords').fill('Guard 🐴')
+        expect(self.page.locator('#status')).to_contain_text('Latin letters')
+        self.page.locator('#name-gondor-swords').fill('Guard')
+        self.ready()
+
     def test_mobile_filter_navigation_and_no_external_dependencies(self):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))

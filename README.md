@@ -1,4 +1,4 @@
-# Uprights
+# Paper Army Standees
 
 A static paper-army workshop for folded standees on **40 mm wide × 20 mm deep bases**. Choose Gondor or orc units, set quantities and colors, preview the cutting sheets, and download accurately sized PDFs.
 
@@ -17,12 +17,13 @@ The site also works with `python3 -m http.server 8000` or any static web host. S
 ## Use
 
 1. Set the number of bases for each unit. The initial sample contains one base each of Gondor swordsmen, Gondor cavalry, orc axemen, and warg riders.
-2. Choose infantry ranks (default two), infantry reverse faces (20% grey silhouettes or blank), and cavalry riders across the frontage (default four). Cavalry always has mirrored profile artwork on opposite faces.
-3. Choose two **setup-wide colors**: ground sections and the background behind figures. Every unit uses the same pair, including blank reverse panels. The background colors are vector fills; the transparent artwork sits above them.
-4. Select A4 or US Letter, orientation, margins, spacing, and fold guides. Oversized strips block export with a message; reduce rider/rank count or panel height, or use a paper orientation with enough room. For example, a default four-rider strip needs portrait paper.
-5. Download the PDF and print on **one side** at **100% / actual size**. Disable fit-to-page and measure the printed 40 mm ruler.
+2. Optionally enable **nameplates** under the unit catalog. Set a unit name or expand **Individual base names** for copy overrides. Each base gets a separate **38 × 4 mm** white label with black text and a cut outline. Blank fields use the unit/artwork name. Captions match labels to artwork and base numbers. Cut and glue labels onto your bases; test the placement on your chosen base first. Text fits from 8 pt down to 6 pt; names that do not fit block export with a request to shorten them. Latin letters (including common accents), numbers and punctuation are supported.
+3. Choose infantry ranks (default two), infantry reverse faces (20% grey silhouettes or blank), and cavalry riders across the frontage (default four). Cavalry always has mirrored profile artwork on opposite faces.
+4. Choose two **setup-wide colors**: ground sections and the background behind figures. Every unit uses the same pair, including blank reverse panels. The background colors are vector fills; the transparent artwork sits above them.
+5. Select A4 or US Letter, orientation, margins, spacing, and fold guides. Oversized strips block export with a message; reduce rider/rank count or panel height, or use a paper orientation with enough room. For example, a default four-rider strip needs portrait paper.
+6. Download the PDF and print on **one side** at **100% / actual size**. Disable fit-to-page and measure the printed 40 mm ruler.
 
-Settings are remembered in this browser. **Save setup** downloads a JSON file containing quantities, folds, colors, and paper settings. **Load setup** restores one; this makes it possible to keep several separate armies/palettes. Artwork remains in the site rather than being duplicated into each setup file.
+Settings are remembered in this browser. **Save setup** downloads a JSON file containing quantities, unit and individual base names, the nameplate toggle, folds, colors, and paper settings. **Load setup** restores one; this makes it possible to keep several separate armies/palettes. Artwork remains in the site rather than being duplicated into each setup file.
 
 ## Fold geometry
 
@@ -61,7 +62,7 @@ This version uses rectangular upright panels so the figure background color rema
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
 - `output/imagegen/cavalry-profile-notes.md`: full prompts for the new side-profile horseman and warg rider, created with the built-in image generation tool. Source PNGs are in the same directory; earlier artwork remains unchanged.
 
-The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Uprights.
+The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Paper Army Standees.
 
 ## Checks
 
