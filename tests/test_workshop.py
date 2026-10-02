@@ -60,7 +60,7 @@ class WorkshopTests(unittest.TestCase):
             const setup = {...defaultSetup(), ranks, riders};
             for (const art of catalog) {
               const s=makeStrip(art,setup);
-              out.push({kind:art.kind,width:s.width,span:s.span,count:s.count,height:s.height,
+              out.push({hero:!!art.hero,kind:art.kind,width:s.width,span:s.span,count:s.count,height:s.height,
                 panelHeight:s.panelHeight,ground:s.sections.filter(x=>x.kind==='ground').reduce((n,x)=>n+x.height,0),
                 mountain:s.folds.filter(x=>x.kind==='mountain').length,valley:s.folds.filter(x=>x.kind==='valley').length,
                 contiguous:s.sections.every((x,i)=>i===0?x.y===0:Math.abs(x.y-s.sections[i-1].y-s.sections[i-1].height)<1e-7),
@@ -72,12 +72,36 @@ class WorkshopTests(unittest.TestCase):
         for s in result:
             mounted = s['kind'] == 'Mounted'
             self.assertEqual(s['width'], 20 if mounted else 40)
-            self.assertAlmostEqual(s['ground'], 40 if mounted else 20)
+            self.assertAlmostEqual(s['ground'], 20 if s['hero'] else 40 if mounted else 20)
             self.assertAlmostEqual(s['height'], s['ground'] + 2 * s['count'] * s['panelHeight'])
             self.assertEqual(s['mountain'], s['count'])
             self.assertEqual(s['valley'], 2 * s['count'])
             self.assertTrue(s['contiguous'])
             self.assertEqual(set(s['variants']), {'mirror' if mounted else 'silhouette'})
+
+    def test_rohan_hero_square_base_and_export(self):
+        self.page.locator('[data-filter="Rohan"]').click()
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 4)
+        result = self.page.evaluate("""async () => {
+          const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
+          const {catalog} = await import('./src/catalog.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const art = catalog.find(a=>a.id==='rohan-eowyn'), setup=defaultSetup();
+          setup.quantities=Object.fromEntries(catalog.map(a=>[a.id,a===art?1:0]));
+          setup.nameplates=true;
+          const strips=[2,3,4].map(riders=>makeStrip(art,{...setup,riders}));
+          const layout=layoutSetup(setup), assets=await prepareArtwork(layout);
+          const pdf=await createPDF(layout,assets);
+          return {strips:strips.map(s=>({width:s.width,span:s.span,count:s.count,height:s.height,
+            ground:s.sections.filter(x=>x.kind==='ground').reduce((n,x)=>n+x.height,0),
+            variants:s.sections.filter(x=>x.kind==='face').map(x=>x.variant)})),
+            label:layout.pages.flat().find(s=>s.kind==='nameplate').width,pdf:pdf.length};
+        }""")
+        for strip in result['strips']:
+            self.assertEqual(strip, dict(width=20, span=20, count=1, height=62,
+                                         ground=20, variants=['front', 'mirror']))
+        self.assertEqual(result['label'], 18)
+        self.assertGreater(result['pdf'], 1000)
 
     def test_opposite_faces_align_and_silhouettes_are_grey(self):
         result = self.page.evaluate('''async () => {
@@ -143,7 +167,8 @@ class WorkshopTests(unittest.TestCase):
           const results=[];
           for(const paper of ['a4','letter']) for(const orientation of ['portrait','landscape']) {
             const s={...defaultSetup(),paper,orientation,riders:2};
-            for(const id in s.quantities)s.quantities[id]=8;
+            const ids=Object.keys(s.quantities);
+            ids.forEach((id,i)=>s.quantities[id]=Math.floor(100/ids.length)+(i<100%ids.length?1:0));
             const l=layoutSetup(s);results.push({width:l.width,height:l.height,margin:l.margin,
               pages:l.pages.map(p=>p.map(x=>({x:x.x,y:x.y,w:x.width,h:x.height,captionY:x.captionY})))});
           }
@@ -151,7 +176,7 @@ class WorkshopTests(unittest.TestCase):
         }''')
         for layout in result:
             self.assertGreater(len(layout['pages']), 1)
-            self.assertEqual(sum(map(len, layout['pages'])), 80)
+            self.assertEqual(sum(map(len, layout['pages'])), 100)
             for page in layout['pages']:
                 for i, a in enumerate(page):
                     self.assertGreaterEqual(a['x'], layout['margin'])

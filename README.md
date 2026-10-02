@@ -1,6 +1,8 @@
 # Paper Army Standees
 
-A static paper-army workshop for folded standees on **40 mm wide × 20 mm deep bases**. Choose Gondor or orc units, set quantities and colors, preview the cutting sheets, and download accurately sized PDFs.
+A static paper-army workshop for folded standees on **40 mm wide × 20 mm deep bases**. Choose Gondor, Rohan, or orc units, set quantities and colors, preview the cutting sheets, and download accurately sized PDFs.
+
+Rohan adds mounted spearmen, horse archers, and Royal Guard, plus **Éowyn as a mounted hero on a 20 × 20 mm base**. Her single mirrored upright ignores the army rider count, uses the mounted panel height, and unfolds to 20 × 62 mm at the default height. Hero nameplates are 18 × 4 mm.
 
 The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers and horse archers, plus orc axemen, mixed warriors, foot archers, warg riders and warg archers. Foot units are frontal ranks of eight figures; mounted units use side profiles mirrored on their reverse faces.
 
@@ -19,7 +21,7 @@ The site also works with `python3 -m http.server 8000` or any static web host. S
 ## Use
 
 1. Set the number of bases for each unit. The initial sample contains one base each of Gondor swordsmen, Gondor cavalry, orc axemen, and warg riders.
-2. Optionally enable **nameplates** under the unit catalog. Set a unit name or expand **Individual base names** for copy overrides. Each base gets a separate **38 × 4 mm** white label with black text and a cut outline. Blank fields use the unit/artwork name. Captions match labels to artwork and base numbers. Cut and glue labels onto your bases; test the placement on your chosen base first. Text fits from 8 pt down to 6 pt; names that do not fit block export with a request to shorten them. Latin letters (including common accents), numbers and punctuation are supported.
+2. Optionally enable **nameplates** under the unit catalog. Set a unit name or expand **Individual base names** for copy overrides. Each unit base gets a separate **38 × 4 mm** (heroes **18 × 4 mm**) white label with black text and a cut outline. Blank fields use the unit/artwork name. Captions match labels to artwork and base numbers. Cut and glue labels onto your bases; test the placement on your chosen base first. Text fits from 8 pt down to 6 pt; names that do not fit block export with a request to shorten them. Latin letters (including common accents), numbers and punctuation are supported.
 3. Choose infantry ranks (default two), infantry reverse faces (20% grey silhouettes or blank), and cavalry riders across the frontage (default four). Cavalry always has mirrored profile artwork on opposite faces.
 4. Choose two **setup-wide colors**: ground sections and the background behind figures. Every unit uses the same pair, including blank reverse panels. The background colors are vector fills; the transparent artwork sits above them.
 5. Select A4 or US Letter, orientation, margins, spacing, and fold guides. Oversized strips block export with a message; reduce rider/rank count or panel height, or use a paper orientation with enough room. For example, a default four-rider strip needs portrait paper.
@@ -62,7 +64,7 @@ This version uses rectangular upright panels so the figure background color rema
 - `src/catalog.js`: bundled artwork catalog.
 - `vendor/`: locally bundled pdf-lib 1.17.1 and its MIT license, taken from the neighboring midgard-sticker-maker project's vendor folder.
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
-- `artwork/Gondor/` and `artwork/Orcs/`: approved PNGs used by the catalog, organized by faction. All current images are approved.
+- `artwork/Gondor/`, `artwork/Rohan/`, and `artwork/Orcs/`: approved PNGs used by the catalog, organized by faction. Rohan artwork is newly generated for this addition.
 - `output/imagegen/`: artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`, and foot/mounted archer prompts in `archer-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
 
 The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Paper Army Standees.
