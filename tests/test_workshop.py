@@ -53,7 +53,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_era_and_faction_filters_preserve_selected_bases(self):
         eras = self.page.evaluate("async () => (await import('./src/catalog.js')).catalog.map(a => a.era)")
-        self.assertEqual(set(eras), {'middle-earth-third-age'})
+        self.assertEqual(set(eras), {'middle-earth-third-age', 'american-civil-war'})
         expect(self.page.locator('#era')).to_have_value('middle-earth-third-age')
         # Simulate a future era to exercise filtering across classifications.
         source = (ROOT / 'src/catalog.js').read_text() + """
@@ -76,6 +76,30 @@ class WorkshopTests(unittest.TestCase):
         expect(self.page.locator('[data-art="future-unit"]')).to_be_hidden()
         expect(self.page.locator('[data-art="gondor-swords"]')).to_be_visible()
         self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+
+    def test_american_civil_war_infantry_load_and_export(self):
+        self.page.locator('#era').select_option('american-civil-war')
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 2)
+        self.page.locator('[data-filter="CSA"]').click()
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 1)
+        expect(self.page.locator('[data-art="acw-csa-infantry"]')).to_be_visible()
+        self.page.locator('[data-filter="USA"]').click()
+        expect(self.page.locator('[data-art="acw-usa-infantry"]')).to_be_visible()
+        result = self.page.evaluate("""async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const arts = catalog.filter(a => a.era === 'american-civil-war');
+          const setup = defaultSetup();
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          return {pdf: (await createPDF(layout, assets)).length, assets: assets.size,
+            strips: arts.map(a => {const s = makeStrip(a, setup);
+              return [s.baseWidth, s.baseDepth, s.count, s.width, s.panelHeight];})};
+        }""")
+        self.assertGreater(result['pdf'], 1000)
+        self.assertEqual(result['assets'], 4)
+        self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
 
     def test_flat_feet_geometry_and_perpendicular_axes(self):
         result = self.page.evaluate('''async () => {
@@ -462,7 +486,7 @@ class WorkshopTests(unittest.TestCase):
         expect(self.page.locator('#download')).to_be_disabled()
         self.page.locator('#mounted-height').fill('21')
         self.ready()
-        for input in self.page.locator('.quantity input').all():
+        for input in self.page.locator('.art-card:visible .quantity input').all():
             input.fill('0')
         expect(self.page.locator('#sheet')).to_contain_text('Choose at least one base')
         expect(self.page.locator('#download')).to_be_disabled()

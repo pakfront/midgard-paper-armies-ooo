@@ -1,5 +1,6 @@
 export const eras = [
   {id: 'middle-earth-third-age', name: 'Middle-earth · Third Age'},
+  {id: 'american-civil-war', name: 'American Civil War'},
 ];
 
 export const catalog = [
@@ -27,4 +28,8 @@ export const catalog = [
   {id: 'orc-troll', name: 'Giant', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 35, preserveAspect: true, file: 'orc-giant.png', note: 'Single slovenly giant · 35 mm tall panel · 40 × 20 mm base'},
   {id: 'orc-monstrosities', name: 'Trolls', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 23, preserveAspect: true, file: 'orc-trolls.png', note: 'Two rotting Trolls · one 23 mm upright · 40 × 20 mm base'},
   {id: 'orc-ogres', name: 'Ogres', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 23, preserveAspect: true, file: 'orc-ogres.png', note: 'Two ogres · one 23 mm upright · 40 × 20 mm base'},
+  {id: 'gondor-trebuchet', name: 'Gondor trebuchet', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 35, preserveAspect: true, file: 'gondor-trebuchet-profile.png', note: 'Bold side profile · one war machine · 35 mm panel · 40 × 20 mm base'},
+  {id: 'gondor-ballista', name: 'Gondor bolt-throwing ballista', shortName: 'Gondor ballista', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 23, preserveAspect: true, file: 'gondor-ballista-profile.png', note: 'Bold side profile · one bolt thrower · 23 mm panel · 40 × 20 mm base'},
+  {id: 'acw-csa-infantry', name: 'CSA infantry', era: 'american-civil-war', faction: 'CSA', kind: 'Infantry', height: 13.5, file: 'csa-infantry-clean.png', note: 'Clean style · eight Confederate riflemen · 40 × 20 mm'},
+  {id: 'acw-usa-infantry', name: 'USA infantry', era: 'american-civil-war', faction: 'USA', kind: 'Infantry', height: 13.5, file: 'usa-infantry-clean.png', note: 'Clean style · eight Union riflemen · 40 × 20 mm'},
 ].map(art => ({...art, path: `artwork/${art.faction}/${art.file}`}));

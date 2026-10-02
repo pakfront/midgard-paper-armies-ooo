@@ -12,7 +12,11 @@ The Orc faction also has a single slovenly, human-looking Giant on a **40 × 20 
 
 The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers and horse archers, plus orc axemen, mixed warriors, foot archers, warg riders and warg archers. Foot units are frontal ranks of eight figures; mounted units use side profiles mirrored on their reverse faces.
 
-All current artwork belongs to the **Middle-earth · Third Age** era (`middle-earth-third-age`). Era and faction filters only affect browsing; selected bases remain in the print setup. Catalog entries declare their era, and the app builds the available era and faction choices from the catalog. Artwork files remain organized by faction.
+Gondor siege Monstrosities include a **trebuchet** and **bolt-throwing ballista**, each with one upright on a **40 × 20 mm base**. Bold outlines and simplified side profiles keep the machines readable at small print sizes. The trebuchet uses a fixed **35 mm panel** (40 × 90 mm unfolded); the ballista uses a **23 mm panel** (40 × 66 mm unfolded). Artwork retains its proportions, including the complete arm, sling, bow and bolt. Both follow the infantry silhouette/blank reverse setting and support 38 × 4 mm nameplates.
+
+The original fantasy artwork belongs to the **Middle-earth · Third Age** era (`middle-earth-third-age`). Era and faction filters only affect browsing; selected bases remain in the print setup. Catalog entries declare their era, and the app builds the available era and faction choices from the catalog. Artwork files remain organized by faction.
+
+The **American Civil War** era (`american-civil-war`) starts with **CSA infantry** and **USA infantry**, each a frontal rank of eight riflemen with bayonets on a 40 × 20 mm Foot base. CSA uses grey/butternut uniforms; USA uses dark blue coats and light blue trousers. Both use the existing infantry folds, panel-height settings, silhouettes/blank reverses, and nameplates.
 
 ## Unit types
 
@@ -85,6 +89,7 @@ This version uses rectangular upright panels so the figure background color rema
 - `src/catalog.js`: bundled artwork catalog.
 - `vendor/`: locally bundled pdf-lib 1.17.1 and its MIT license, taken from the neighboring midgard-sticker-maker project's vendor folder.
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
+- `artwork/CSA/` and `artwork/USA/`: American Civil War infantry PNGs; prompts are recorded in `output/imagegen/american-civil-war-notes.md`.
 - `artwork/Gondor/`, `artwork/Rohan/`, and `artwork/Orcs/`: approved PNGs used by the catalog, organized by faction. Rohan artwork is newly generated for this addition.
 - `output/imagegen/`: artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`, and foot/mounted archer prompts in `archer-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
 
