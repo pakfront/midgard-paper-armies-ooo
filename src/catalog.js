@@ -12,5 +12,6 @@ export const catalog = [
   {id: 'rohan-spears', name: 'Rohan mounted spearmen', faction: 'Rohan', kind: 'Mounted', file: 'rohan-spearman-profile.png', note: 'Clean style · mounted spearmen · 40 × 20 mm'},
   {id: 'rohan-archers', name: 'Rohan mounted archers', faction: 'Rohan', kind: 'Mounted', file: 'rohan-archer-profile.png', note: 'Clean style · horse archers · 40 × 20 mm'},
   {id: 'rohan-guard', name: 'Rohan Royal Guard', faction: 'Rohan', kind: 'Mounted', file: 'rohan-royal-guard-profile.png', note: 'Clean style · mounted Royal Guard · 40 × 20 mm'},
+  {id: 'rohan-charging-riders', name: 'Rohan charging riders', shortName: 'Rohan charging riders', faction: 'Rohan', kind: 'Mounted', file: 'rohan-charging-rider-profile.png', note: 'Charging variant · galloping horse · leveled lance · 40 × 20 mm'},
   {id: 'rohan-eowyn', name: 'Éowyn', faction: 'Rohan', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'eowyn-mounted-profile.png', note: 'Mounted hero · one upright · 20 × 20 mm'},
 ].map(art => ({...art, path: `artwork/${art.faction}/${art.file}`}));

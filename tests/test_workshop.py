@@ -81,7 +81,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_rohan_hero_square_base_and_export(self):
         self.page.locator('[data-filter="Rohan"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 4)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 5)
         result = self.page.evaluate("""async () => {
           const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
           const {catalog} = await import('./src/catalog.js');

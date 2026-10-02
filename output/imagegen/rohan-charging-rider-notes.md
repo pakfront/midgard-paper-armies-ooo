@@ -1,0 +1,8 @@
+# Rohan charging riders
+
+Generated with built-in imagegen, using `artwork/Rohan/rohan-spearman-profile.png` as the equipment and style reference. New variant; existing standing profiles preserved. Final asset: `artwork/Rohan/rohan-charging-rider-profile.png`. Uses the normal mounted 40 × 20 mm base and mirrored faces; source proportions are preserved within the 20 mm profile panel.
+
+## Prompt
+
+Use case: precise-object-edit. Asset type: transparent paper miniature for a new Rohan charging rider unit variant. Input image: reference for the rider equipment, chestnut horse, green cloak, bronze-trimmed helmet, silver mail, round green shield with white horse emblem, and clean bold-outline flat-shaded illustration style. Change the pose: ONE horse and rider in STRICT LEFT SIDE PROFILE charging at a gallop. Horse neck extended, forelegs reaching forward and hind legs driving backward in an unmistakable dynamic galloping stride; all four legs anatomically coherent and visible. Rider leans forward in saddle, firmly holds a lance LEVELED HORIZONTALLY pointing LEFT above the horse's head, tip fully visible, modest length suitable for a miniature; shield on visible side. Cloak, mane and tail stream backward. Keep horse and rider identity, Rohan equipment and color palette. Compact energetic silhouette with approximately 1.5:1 total width to height so it remains legible when fitted to a 19 mm wide panel. Complete lance tip, all hooves, ears, tail, cloak, helmet within frame with transparent padding. Bold black outlines, large flat color masses, simple shading, minimal fine detail. Actual transparent RGBA background, zero alpha outside subject; no ground, shadow, scenery, dust, motion lines, text, borders or base. Only ONE rider and horse.
+
