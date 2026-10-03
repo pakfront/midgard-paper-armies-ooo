@@ -2,7 +2,7 @@
 
 A static paper-army workshop for folded standees on **40 mm wide × 20 mm deep bases**. Choose Gondor, Rohan, or orc units, set quantities and colors, preview the cutting sheets, and download accurately sized PDFs.
 
-Rohan adds mounted spearmen, horse archers, and Royal Guard, with a separate charging-rider variant (galloping horse and leveled lance), plus **Éowyn as a mounted hero on a 20 × 20 mm base**. Her single mirrored upright ignores the army rider count, uses the mounted panel height, and unfolds to 20 × 62 mm at the default height. Hero nameplates are 18 × 4 mm.
+Rohan adds foot spearmen and archers, mounted spearmen, horse archers, and Royal Guard, with a separate charging-rider variant (galloping horse and leveled lance), plus **Éowyn as a mounted hero on a 20 × 20 mm base**. Her single mirrored upright ignores the army rider count, uses the mounted panel height, and unfolds to 20 × 62 mm at the default height. Hero nameplates are 18 × 4 mm.
 
 Gondor also includes generic mounted heroes: a sword-bearing captain and a standard bearer, plus dynamic variants with a charging captain and a herald on a rearing horse. Each uses one mirrored upright on a **20 × 20 mm base**, independent of the cavalry rider count, with an optional **18 × 4 mm** nameplate.
 
@@ -10,7 +10,7 @@ Orcs include two generic mounted heroes: an axe-wielding chieftain on a charging
 
 The Orc faction also has a single slovenly, human-looking Giant on a **40 × 20 mm base**, with one **35 mm tall panel** independent of infantry ranks and panel height. Its artwork keeps its proportions, and its reverse follows the infantry silhouette/blank setting. The unfolded strip is **40 × 90 mm**, with an optional **38 × 4 mm** nameplate. **Trolls** adds two smaller Trolls side by side on one **23 mm tall upright**, also on a **40 × 20 mm base**; its unfolded strip is **40 × 66 mm** and uses the same reverse and nameplate options. **Ogres** adds two bulky armored brutes guided by the original Giant design, using the same base and 23 mm panel as Trolls.
 
-The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers and horse archers, plus orc axemen, mixed warriors, foot archers, warg riders and warg archers. Foot units are frontal ranks of eight figures; mounted units use side profiles mirrored on their reverse faces.
+The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers and horse archers; Isengard Uruk-hai with spears and shields and Uruk-hai crossbowmen; plus Orc axemen, mixed warriors, foot archers, warg riders and warg archers. Foot units are frontal ranks of eight figures; mounted units use side profiles mirrored on their reverse faces. The Rohan foot and Isengard ranks use simplified contours and broad color shapes for small printing; edit prompts are recorded in `output/imagegen/foot-print-simplification-notes.md`.
 
 Gondor siege Monstrosities include a **trebuchet** and **bolt-throwing ballista**, each with one upright on a **40 × 20 mm base**. Bold outlines and simplified side profiles keep the machines readable at small print sizes. The trebuchet uses a fixed **35 mm panel** (40 × 90 mm unfolded); the ballista uses a **23 mm panel** (40 × 66 mm unfolded). Artwork retains its proportions, including the complete arm, sling, bow and bolt. Both follow the infantry silhouette/blank reverse setting and support 38 × 4 mm nameplates.
 
@@ -90,7 +90,7 @@ This version uses rectangular upright panels so the figure background color rema
 - `vendor/`: locally bundled pdf-lib 1.17.1 and its MIT license, taken from the neighboring midgard-sticker-maker project's vendor folder.
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
 - `artwork/american-civil-war/CSA/` and `artwork/american-civil-war/USA/`: American Civil War unit PNGs; prompts are recorded in `output/imagegen/american-civil-war-notes.md` and `output/imagegen/american-civil-war-expansion-notes.md`.
-- `artwork/middle-earth-third-age/Gondor/`, `artwork/middle-earth-third-age/Rohan/`, and `artwork/middle-earth-third-age/Orcs/`: Middle-earth PNG artwork used by the catalog, organized by faction within the era.
+- `artwork/middle-earth-third-age/`: Middle-earth PNG artwork used by the catalog, organized by faction within the era, including Gondor, Isengard, Orcs, and Rohan.
 - `output/imagegen/`: artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`, and foot/mounted archer prompts in `archer-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
 
 The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Paper Army Standees.
