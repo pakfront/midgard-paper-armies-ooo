@@ -1,6 +1,6 @@
 # Generic mounted Gondor heroes
 
-Generated with the built-in image generation tool using `artwork/Gondor/gondor-lancer-profile.png` as a style reference. Final transparent PNGs are `artwork/Gondor/gondor-captain-profile.png` and `artwork/Gondor/gondor-standard-bearer-profile.png`.
+Generated with the built-in image generation tool using `artwork/middle-earth-third-age/Gondor/gondor-lancer-profile.png` as a style reference. Final transparent PNGs are `artwork/middle-earth-third-age/Gondor/gondor-captain-profile.png` and `artwork/middle-earth-third-age/Gondor/gondor-standard-bearer-profile.png`.
 
 Both catalog entries use one mirrored mounted upright on a 20 × 20 mm base, independent of the cavalry rider count, and an optional 18 × 4 mm nameplate.
 

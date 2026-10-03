@@ -40,4 +40,4 @@ export const catalog = [
   {id: 'acw-usa-artillery', name: 'USA field artillery', era: 'american-civil-war', faction: 'USA', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 23, preserveAspect: true, file: 'usa-field-artillery.png', note: 'Field gun with two crew · 23 mm upright · 40 × 20 mm base'},
   {id: 'acw-csa-leader', name: 'CSA cavalry leader', era: 'american-civil-war', faction: 'CSA', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'csa-leader-profile.png', note: 'Mounted leader · one upright · 20 × 20 mm'},
   {id: 'acw-usa-leader', name: 'USA cavalry leader', era: 'american-civil-war', faction: 'USA', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'usa-leader-profile.png', note: 'Mounted leader · one upright · 20 × 20 mm'},
-].map(art => ({...art, path: `artwork/${art.faction}/${art.file}`}));
+].map(art => ({...art, path: `artwork/${art.era}/${art.faction}/${art.file}`}));

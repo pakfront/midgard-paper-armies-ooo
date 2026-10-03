@@ -1,6 +1,6 @@
 # Cavalry profiles
 
-Generated with the built-in image generation tool for the Uprights website. Approved source images are in `artwork/Gondor/` and `artwork/Orcs/`; the browser fits the profiles inside 20 mm panels and mirrors opposite faces when exporting. Geometry and colors are applied by the site, not baked into these assets.
+Generated with the built-in image generation tool for the Uprights website. Approved source images are in `artwork/middle-earth-third-age/Gondor/` and `artwork/middle-earth-third-age/Orcs/`; the browser fits the profiles inside 20 mm panels and mirrors opposite faces when exporting. Geometry and colors are applied by the site, not baked into these assets.
 
 ## gondor-lancer-profile
 

@@ -1,6 +1,6 @@
 # Orc Ogres
 
-Generated with the built-in image generation tool using the original green armored Giant as the reference, before the Giant's human-looking revision. Final asset: `artwork/Orcs/orc-ogres.png`.
+Generated with the built-in image generation tool using the original green armored Giant as the reference, before the Giant's human-looking revision. Final asset: `artwork/middle-earth-third-age/Orcs/orc-ogres.png`.
 
 Exactly two Ogres on one 23 mm upright, on a 40 × 20 mm base; unfolded strip 40 × 66 mm. Artwork retains its proportions. Reverse follows the silhouette/blank setting, with an optional 38 × 4 mm nameplate.
 

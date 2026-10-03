@@ -1,6 +1,6 @@
 # Human-looking slovenly Giant
 
-Edited with the built-in image generation tool from the original green armored Giant. Final replacement: `artwork/Orcs/orc-giant.png`. One figure on a 40 × 20 mm base with a fixed 35 mm panel; unfolded strip 40 × 90 mm. The original appearance also guided the new Ogres unit.
+Edited with the built-in image generation tool from the original green armored Giant. Final replacement: `artwork/middle-earth-third-age/Orcs/orc-giant.png`. One figure on a 40 × 20 mm base with a fixed 35 mm panel; unfolded strip 40 × 90 mm. The original appearance also guided the new Ogres unit.
 
 ## Edit prompt
 

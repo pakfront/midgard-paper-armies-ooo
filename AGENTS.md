@@ -19,7 +19,7 @@ Base dimensions and figure counts describe the assembled model. Upright layout f
 
 The catalog currently uses `kind: 'Infantry'` for Foot, `kind: 'Mounted'` for Cavalry and mounted Heroes, `hero: true` for Heroes, and `kind: 'Monster'` for Monstrosities. These internal fields control rendering and folding; the unit type definitions above also cover future foot heroes and war machines.
 
-Keep catalog IDs stable when renaming units or artwork so saved setups retain quantities and names. The Giant retains the legacy ID `orc-troll`; Trolls retains `orc-monstrosities`. Use `artwork/Orcs/orc-trolls.png` for the two-Troll artwork.
+Keep catalog IDs stable when renaming units or artwork so saved setups retain quantities and names. The Giant retains the legacy ID `orc-troll`; Trolls retains `orc-monstrosities`. Use `artwork/middle-earth-third-age/Orcs/orc-trolls.png` for the two-Troll artwork.
 
 ## Validation
 

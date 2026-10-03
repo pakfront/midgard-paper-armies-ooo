@@ -1,6 +1,6 @@
 # Rohan charging riders
 
-Generated with built-in imagegen, using `artwork/Rohan/rohan-spearman-profile.png` as the equipment and style reference. New variant; existing standing profiles preserved. Final asset: `artwork/Rohan/rohan-charging-rider-profile.png`. Uses the normal mounted 40 × 20 mm base and mirrored faces; source proportions are preserved within the 20 mm profile panel.
+Generated with built-in imagegen, using `artwork/middle-earth-third-age/Rohan/rohan-spearman-profile.png` as the equipment and style reference. New variant; existing standing profiles preserved. Final asset: `artwork/middle-earth-third-age/Rohan/rohan-charging-rider-profile.png`. Uses the normal mounted 40 × 20 mm base and mirrored faces; source proportions are preserved within the 20 mm profile panel.
 
 ## Prompt
 

@@ -1,6 +1,6 @@
 # Rohan mounted profiles
 
-Generated with the built-in imagegen tool. Reference: `artwork/Gondor/gondor-lancer-profile.png` (style only). Source transparency preserved; browser applies size, backgrounds and mirrored reverse faces.
+Generated with the built-in imagegen tool. Reference: `artwork/middle-earth-third-age/Gondor/gondor-lancer-profile.png` (style only). Source transparency preserved; browser applies size, backgrounds and mirrored reverse faces.
 
 ## Shared prompt
 

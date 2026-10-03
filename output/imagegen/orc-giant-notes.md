@@ -1,6 +1,6 @@
 # Orc faction Giant
 
-Generated with the built-in image generation tool using `artwork/Orcs/orc-warg-profile.png` as a style reference. Final transparent artwork: `artwork/Orcs/orc-giant.png`.
+Generated with the built-in image generation tool using `artwork/middle-earth-third-age/Orcs/orc-warg-profile.png` as a style reference. Final transparent artwork: `artwork/middle-earth-third-age/Orcs/orc-giant.png`.
 
 One frontal monster, on a 40 × 20 mm base. The fixed 35 mm panel and single upright ignore infantry rank and panel height settings. Artwork preserves its aspect ratio. Reverse is the chosen infantry silhouette or blank. Unfolded strip: 40 × 90 mm; optional nameplate: 38 × 4 mm.
 

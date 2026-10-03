@@ -14,7 +14,7 @@ The catalog includes Gondor swordsmen, spearmen, foot archers, mounted lancers a
 
 Gondor siege Monstrosities include a **trebuchet** and **bolt-throwing ballista**, each with one upright on a **40 × 20 mm base**. Bold outlines and simplified side profiles keep the machines readable at small print sizes. The trebuchet uses a fixed **35 mm panel** (40 × 90 mm unfolded); the ballista uses a **23 mm panel** (40 × 66 mm unfolded). Artwork retains its proportions, including the complete arm, sling, bow and bolt. Both follow the infantry silhouette/blank reverse setting and support 38 × 4 mm nameplates.
 
-The original fantasy artwork belongs to the **Middle-earth · Third Age** era (`middle-earth-third-age`). Era and faction filters only affect browsing; selected bases remain in the print setup. Catalog entries declare their era, and the app builds the available era and faction choices from the catalog. Artwork files remain organized by faction.
+The original fantasy artwork belongs to the **Middle-earth · Third Age** era (`middle-earth-third-age`). Era and faction filters only affect browsing; selected bases remain in the print setup. Catalog entries declare their era, and the app builds the available era and faction choices from the catalog. Artwork files are organized by era, then faction: `artwork/<era-id>/<faction>/<filename>`. This lets different eras reuse faction and artwork names without conflicts.
 
 The **American Civil War** era (`american-civil-war`) includes CSA and USA infantry, mounted and dismounted cavalry, field artillery, and mounted leaders. Infantry and dismounted cavalry use a frontal rank of eight figures on 40 × 20 mm Foot bases. Mounted cavalry uses one side-profile upright on a 40 × 20 mm Cavalry base. Each artillery unit has one gun with two crew on a 40 × 20 mm Monstrosity base with a fixed 23 mm panel. Leaders use one mounted upright on a 20 × 20 mm Hero base. CSA uniforms use grey and butternut; USA uniforms use navy and light blue. These units use the existing fold, reverse, and nameplate options. Generation notes are in `output/imagegen/american-civil-war-notes.md` and `output/imagegen/american-civil-war-expansion-notes.md`.
 
@@ -89,8 +89,8 @@ This version uses rectangular upright panels so the figure background color rema
 - `src/catalog.js`: bundled artwork catalog.
 - `vendor/`: locally bundled pdf-lib 1.17.1 and its MIT license, taken from the neighboring midgard-sticker-maker project's vendor folder.
 - `examples/starter-setup.json` and `examples/starter-print.pdf`: a ready-to-print example with two infantry and two cavalry bases.
-- `artwork/CSA/` and `artwork/USA/`: American Civil War unit PNGs; prompts are recorded in `output/imagegen/american-civil-war-notes.md` and `output/imagegen/american-civil-war-expansion-notes.md`.
-- `artwork/Gondor/`, `artwork/Rohan/`, and `artwork/Orcs/`: PNG artwork used by the catalog, organized by faction.
+- `artwork/american-civil-war/CSA/` and `artwork/american-civil-war/USA/`: American Civil War unit PNGs; prompts are recorded in `output/imagegen/american-civil-war-notes.md` and `output/imagegen/american-civil-war-expansion-notes.md`.
+- `artwork/middle-earth-third-age/Gondor/`, `artwork/middle-earth-third-age/Rohan/`, and `artwork/middle-earth-third-age/Orcs/`: Middle-earth PNG artwork used by the catalog, organized by faction within the era.
 - `output/imagegen/`: artwork prompt notes. Cavalry profile prompts are recorded in `cavalry-profile-notes.md`, and foot/mounted archer prompts in `archer-notes.md`; superseded artwork and prototype print sheets are kept in Git history.
 
 The design takes inspiration from `../midgard-sticker-maker/`: a local artwork catalog, browser-only export, physical dimensions, and setup files. The fold geometry and editor are specific to Paper Army Standees.
