@@ -20,6 +20,8 @@ The **American Civil War** era (`american-civil-war`) includes CSA and USA infan
 
 ## Unit types
 
+The Middle-earth expansion adds Isengard Warg riders; a Rohan foot captain; Mordor Orc spearmen, heavily armored Morannon Orcs, a banner bearer, a catapult and a Cave Troll; a Gondor foot captain and Aragorn on foot; and Haradrim spearmen, archers and cavalry. Foot Heroes use one upright on a **20 × 20 mm base**, retain artwork proportions, and follow the infantry silhouette/blank reverse setting. The Mordor catapult uses one fixed **23 mm panel** and the Cave Troll one **35 mm panel**, both on **40 × 20 mm bases**. All new artwork follows the simplified print style in [MIDDLE_EARTH_ARTWORK_TODO.md](MIDDLE_EARTH_ARTWORK_TODO.md); full prompts and asset paths are recorded in `output/imagegen/middle-earth-todo-expansion-notes.md`.
+
 | Type | Figures per base | Base size |
 |---|---|---|
 | Heroes | One figure (on foot or mounted) | 20 × 20 mm |

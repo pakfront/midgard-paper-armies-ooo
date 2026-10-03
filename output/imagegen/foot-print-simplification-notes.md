@@ -2,7 +2,7 @@
 
 Edited with the built-in image generation tool following `clean-style-tests-notes.md`. All four catalog filenames remain unchanged. Each rank retains eight figures, complete equipment, faction colors and transparent backgrounds. Fine mail, texture and ornament were replaced by broad shapes and stronger contours for 40 mm frontage printing.
 
-+## Rohan/rohan-foot-archers.png
+## Rohan/rohan-foot-archers.png
 
 Edit target and saved asset: `artwork/middle-earth-third-age/Rohan/rohan-foot-archers.png`.
 

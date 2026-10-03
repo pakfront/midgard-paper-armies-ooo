@@ -4,6 +4,18 @@ export const eras = [
 ];
 
 export const catalog = [
+  {id: 'isengard-warg-riders', name: 'Isengard Warg riders', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Mounted', height: 20, file: 'isengard-warg-rider-profile.png', note: 'Clean print style · mounted side profile · 40 × 20 mm'},
+  {id: 'rohan-foot-captain', name: 'Rohan foot captain', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Infantry', hero: true, baseWidth: 20, baseDepth: 20, preserveAspect: true, file: 'rohan-foot-captain.png', note: 'Clean print style · single foot Hero · 20 × 20 mm'},
+  {id: 'mordor-spearmen', name: 'Mordor Orc spearmen', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'mordor-orc-spearmen.png', note: 'Clean print style · eight figures · 40 × 20 mm'},
+  {id: 'mordor-morannon', name: 'Morannon Orcs', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'morannon-orcs.png', note: 'Clean print style · eight figures · 40 × 20 mm'},
+  {id: 'mordor-banner-bearer', name: 'Mordor banner bearer', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', hero: true, baseWidth: 20, baseDepth: 20, preserveAspect: true, file: 'mordor-banner-bearer.png', note: 'Clean print style · single foot Hero · 20 × 20 mm'},
+  {id: 'mordor-catapult', name: 'Mordor catapult', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 23, preserveAspect: true, file: 'mordor-catapult-profile.png', note: 'Clean print style · one upright · 40 × 20 mm'},
+  {id: 'gondor-foot-captain', name: 'Gondor foot captain', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', hero: true, baseWidth: 20, baseDepth: 20, preserveAspect: true, file: 'gondor-foot-captain.png', note: 'Clean print style · single foot Hero · 20 × 20 mm'},
+  {id: 'harad-spearmen', name: 'Haradrim spearmen', era: 'middle-earth-third-age', faction: 'Harad', kind: 'Infantry', height: 13.5, file: 'harad-spearmen.png', note: 'Clean print style · eight figures · 40 × 20 mm'},
+  {id: 'harad-archers', name: 'Haradrim archers', era: 'middle-earth-third-age', faction: 'Harad', kind: 'Infantry', height: 13.5, file: 'harad-archers.png', note: 'Clean print style · eight figures · 40 × 20 mm'},
+  {id: 'harad-cavalry', name: 'Haradrim cavalry', era: 'middle-earth-third-age', faction: 'Harad', kind: 'Mounted', height: 20, file: 'harad-cavalry-profile.png', note: 'Clean print style · mounted side profile · 40 × 20 mm'},
+  {id: 'gondor-aragorn-foot', name: 'Aragorn on foot', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', hero: true, baseWidth: 20, baseDepth: 20, preserveAspect: true, file: 'aragorn-foot.png', note: 'Clean print style · single foot Hero · 20 × 20 mm'},
+  {id: 'mordor-cave-troll', name: 'Cave Troll', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 35, preserveAspect: true, file: 'cave-troll.png', note: 'Clean print style · one upright · 40 × 20 mm'},
   {id: 'gondor-swords', name: 'Gondor swordsmen', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-swordsmen-clean.png', note: 'Clean style · eight swordsmen'},
   {id: 'gondor-horse', name: 'Gondor mounted lancers', shortName: 'Gondor lancers', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Mounted', height: 20, file: 'gondor-lancer-profile.png', note: 'Clean style · mirrored horse profiles'},
   {id: 'orc-axes', name: 'Orc axemen', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Infantry', height: 13.5, file: 'orc-axemen-clean.png', note: 'Clean style · eight axemen'},

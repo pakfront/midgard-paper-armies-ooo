@@ -101,6 +101,44 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['assets'], 4)
         self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
 
+    def test_middle_earth_expansion_artwork_and_foot_heroes_export(self):
+        ids = ['isengard-warg-riders', 'rohan-foot-captain', 'mordor-spearmen',
+               'mordor-morannon', 'mordor-banner-bearer', 'mordor-catapult',
+               'gondor-foot-captain', 'harad-spearmen', 'harad-archers',
+               'harad-cavalry', 'gondor-aragorn-foot', 'mordor-cave-troll']
+        result = self.page.evaluate('''async ids => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const setup = {...defaultSetup(), ranks: 3, riders: 2, nameplates: true};
+          setup.names = {'rohan-foot-captain': 'Rohan captain', 'mordor-banner-bearer': 'Mordor herald',
+            'gondor-foot-captain': 'Gondor captain', 'gondor-aragorn-foot': 'Aragorn'};
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, ids.includes(a.id) ? 1 : 0]));
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
+          return {total: layout.total, assets: assets.size, pages: pdf.getPageCount(),
+            expected: layout.pages.length, labels: layout.pages.flat().filter(l => l.kind === 'nameplate').map(l => [l.width, l.height]),
+            strips: layout.pages.flat().filter(s => s.kind !== 'nameplate').map(s => ({id: s.art.id, hero: !!s.art.hero,
+              kind: s.art.kind, width: s.width, baseWidth: s.baseWidth, baseDepth: s.baseDepth,
+              count: s.count, panel: s.panelHeight, preserve: !!s.art.preserveAspect}))};
+        }''', ids)
+        self.assertEqual(result['total'], len(ids))
+        self.assertEqual(result['assets'], 2 * len(ids))
+        self.assertEqual(result['pages'], result['expected'])
+        self.assertEqual(len(result['labels']), len(ids))
+        for strip in result['strips']:
+            if strip['hero']:
+                self.assertEqual(strip['kind'], 'Infantry')
+                self.assertEqual([strip['baseWidth'], strip['baseDepth'], strip['width'], strip['count']], [20, 20, 20, 1])
+                self.assertTrue(strip['preserve'])
+            elif strip['kind'] == 'Monster':
+                self.assertEqual(strip['count'], 1)
+                self.assertTrue(strip['preserve'])
+                self.assertEqual(strip['panel'], 35 if strip['id'] == 'mordor-cave-troll' else 23)
+            else:
+                self.assertEqual(strip['count'], 2 if strip['kind'] == 'Mounted' else 3)
+        self.assertEqual(result['labels'].count([18, 4]), 4)
+
     def test_flat_feet_geometry_and_perpendicular_axes(self):
         result = self.page.evaluate('''async () => {
           const {defaultSetup, makeStrip} = await import('./src/model.js');
@@ -121,7 +159,7 @@ class WorkshopTests(unittest.TestCase):
         }''')
         for s in result:
             mounted = s['kind'] == 'Mounted'
-            self.assertEqual(s['width'], 20 if mounted else 40)
+            self.assertEqual(s['width'], 20 if mounted or s['hero'] else 40)
             self.assertAlmostEqual(s['ground'], 20 if s['hero'] else 40 if mounted else 20)
             self.assertAlmostEqual(s['height'], s['ground'] + 2 * s['count'] * s['panelHeight'])
             self.assertEqual(s['mountain'], s['count'])
