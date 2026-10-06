@@ -51,6 +51,113 @@ class WorkshopTests(unittest.TestCase):
     def ready(self):
         expect(self.page.locator('#download')).to_be_enabled(timeout=30000)
 
+    def test_letter_square_cavalry_and_new_settings_round_trip(self):
+        expect(self.page.locator('#paper')).to_have_value('letter')
+        self.page.locator('#cavalry-base-depth').select_option('40')
+        self.page.locator('#figure-background').select_option('gradient')
+        self.page.locator('#gradient-bottom').fill('#345678')
+        self.page.locator('#gradient-top').fill('#effaff')
+        self.page.locator('#nameplates').check()
+        self.page.locator('#label-placement').select_option('attached')
+        self.ready()
+        with self.page.expect_download() as saved:
+            self.page.locator('#save').click()
+        payload = Path(saved.value.path()).read_bytes()
+        self.page.locator('#cavalry-base-depth').select_option('20')
+        self.page.locator('#load-file').set_input_files({'name': 'options.json', 'mimeType': 'application/json', 'buffer': payload})
+        self.ready()
+        self.page.reload()
+        self.ready()
+        for selector, value in [('#cavalry-base-depth', '40'), ('#figure-background', 'gradient'),
+                                ('#gradient-bottom', '#345678'), ('#gradient-top', '#effaff'),
+                                ('#label-placement', 'attached')]:
+            expect(self.page.locator(selector)).to_have_value(value)
+        result = self.page.evaluate('''async () => {
+          const {defaultSetup,validateSetup,makeStrip}=await import('./src/model.js');
+          const {catalog}=await import('./src/catalog.js');
+          const legacy=defaultSetup();legacy.paper='a4';
+          for(const k of ['cavalryBaseDepth','figureBackground','gradientBottom','gradientTop','labelPlacement'])delete legacy[k];
+          const restored=validateSetup(legacy), s={...defaultSetup(),cavalryBaseDepth:40};
+          const cav=makeStrip(catalog.find(a=>a.kind==='Mounted'&&!a.hero),s);
+          return {legacy:restored, cavalry:[cav.baseWidth,cav.baseDepth,cav.width,cav.height,cav.pitch],
+            heroes:catalog.filter(a=>a.hero).map(a=>{const x=makeStrip(a,s);return [x.baseWidth,x.baseDepth,x.count]})};
+        }''')
+        self.assertEqual(result['cavalry'], [40, 40, 40, 208, 10])
+        self.assertTrue(all(h == [20, 20, 1] for h in result['heroes']))
+        self.assertEqual(result['legacy']['paper'], 'a4')
+        self.assertEqual(result['legacy']['cavalryBaseDepth'], 20)
+        self.assertEqual(result['legacy']['figureBackground'], 'solid')
+        self.assertEqual(result['legacy']['labelPlacement'], 'separate')
+
+    def test_gradient_direction_including_blank_reverse_and_pdf(self):
+        result = self.page.evaluate('''async () => {
+          const {defaultSetup,layoutSetup}=await import('./src/model.js');
+          const {prepareArtwork,pageScene,createPDF,previewSVG}=await import('./src/render.js');
+          const l=layoutSetup({...defaultSetup(),figureBackground:'gradient',reverse:'blank',quantities:{'gondor-swords':1}});
+          const assets=await prepareArtwork(l), strips=l.pages.flat(), colors=[];
+          for(const strip of strips) for(const section of strip.sections.filter(s=>s.kind==='face')) {
+            const op=pageScene(l,0).find(o=>o.type==='image'&&o.key.startsWith('gradient:')&&o.y===strip.y+section.y);
+            const im=new Image();im.src=assets.get(op.key).url;await im.decode();
+            const c=document.createElement('canvas');c.width=im.width;c.height=im.height;
+            const ctx=c.getContext('2d');ctx.drawImage(im,0,0);
+            colors.push({side:section.side,top:[...ctx.getImageData(0,0,1,1).data].slice(0,3),
+              bottom:[...ctx.getImageData(0,c.height-1,1,1).data].slice(0,3)});
+          }
+          const bytes=await createPDF(l,assets),pdf=await PDFLib.PDFDocument.load(bytes);
+          return {colors,pages:pdf.getPageCount(),size:pdf.getPages()[0].getSize(),
+            preview:previewSVG(l,0,assets).includes(assets.get(pageScene(l,0).find(o=>o.key?.startsWith('gradient:')).key).url)};
+        }''')
+        dark, light = [69, 107, 148], [238, 247, 255]
+        for panel in result['colors']:
+            for actual, expected in [(panel['top'], dark if panel['side'] == 'front' else light),
+                                     (panel['bottom'], light if panel['side'] == 'front' else dark)]:
+                self.assertTrue(all(abs(a - b) <= 1 for a, b in zip(actual, expected)))
+        self.assertTrue(result['preview'])
+        self.assertEqual(result['pages'], 1)
+        self.assertAlmostEqual(result['size']['width'], 612)
+        self.assertAlmostEqual(result['size']['height'], 792)
+
+    def test_attached_label_nets_packing_names_and_pdf(self):
+        result = self.page.evaluate('''async () => {
+          const {defaultSetup,layoutSetup,makeStrip}=await import('./src/model.js');
+          const {catalog}=await import('./src/catalog.js');
+          const {prepareArtwork,pageScene,createPDF}=await import('./src/render.js');
+          const results=[];
+          for(const depth of [20,40]) for(const paper of ['letter','a4']) for(const orientation of ['portrait','landscape']) {
+            const s={...defaultSetup(),cavalryBaseDepth:depth,paper,orientation,riders:2,nameplates:true,labelPlacement:'attached',
+              names:{...Object.fromEntries(catalog.filter(a=>a.hero).map(a=>[a.id,'Hero'])),'gondor-swords':'Guard'},copyNames:{'gondor-swords':['First Guard']},
+              quantities:Object.fromEntries(catalog.map(a=>[a.id,1]))};
+            const l=layoutSetup(s),assets=await prepareArtwork(l),ops=l.pages.flatMap((_,i)=>pageScene(l,i));
+            const bytes=await createPDF(l,assets),pdf=await PDFLib.PDFDocument.load(bytes);
+            let overlap=false,outside=false;
+            for(const page of l.pages)for(let i=0;i<page.length;i++) {
+              const a=page[i];outside ||= a.x+a.width>l.width-l.margin+1e-8||a.y+a.height>l.height-l.margin-9+1e-8;
+              for(const b of page.slice(i+1))overlap ||= a.x<b.x+b.width&&b.x<a.x+a.width&&a.y-4<b.y+b.height&&b.y-4<a.y+a.height;
+            }
+            results.push({overlap,outside,pages:pdf.getPageCount(),expected:l.pages.length,
+              separate:l.pages.flat().some(x=>x.kind==='nameplate'),text:ops.filter(o=>o.type==='text').map(o=>o.value),
+              strips:l.pages.flat().map(x=>({base:[x.baseWidth,x.baseDepth],mounted:x.art.kind==='Mounted',hero:!!x.art.hero,
+                ground:x.sections.filter(s=>s.kind==='ground').reduce((n,s)=>n+s.height,0),span:x.span,
+                bounds:[x.width-x.bodyWidth,x.height-x.bodyHeight],flap:x.labelFlap,
+                imageWidths:ops.filter(o=>o.type==='image'&&o.x===x.x&&o.y>=x.y&&o.y<x.y+x.bodyHeight).map(o=>o.w)}))});
+          }
+          const off=layoutSetup({...defaultSetup(),labelPlacement:'attached'});
+          return {results,off:off.pages.flat().some(s=>s.labelFlap)};
+        }''')
+        self.assertFalse(result['off'])
+        for layout in result['results']:
+            self.assertFalse(layout['overlap'])
+            self.assertFalse(layout['outside'])
+            self.assertFalse(layout['separate'])
+            self.assertEqual(layout['pages'], layout['expected'])
+            self.assertIn('First Guard', layout['text'])
+            for strip in layout['strips']:
+                self.assertAlmostEqual(strip['ground'], strip['span'])
+                self.assertEqual(strip['bounds'], [10, 0] if strip['mounted'] else [0, 10])
+                self.assertEqual(strip['flap']['width'] if strip['mounted'] else strip['flap']['height'], 10)
+                if strip['hero']:
+                    self.assertEqual(strip['base'], [20, 20])
+
     def test_era_and_faction_filters_preserve_selected_bases(self):
         eras = self.page.evaluate("async () => (await import('./src/catalog.js')).catalog.map(a => a.era)")
         self.assertEqual(set(eras), {'middle-earth-third-age', 'american-civil-war'})
@@ -79,9 +186,9 @@ class WorkshopTests(unittest.TestCase):
 
     def test_american_civil_war_infantry_load_and_export(self):
         self.page.locator('#era').select_option('american-civil-war')
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 2)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 10)
         self.page.locator('[data-filter="CSA"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 1)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 5)
         expect(self.page.locator('[data-art="acw-csa-infantry"]')).to_be_visible()
         self.page.locator('[data-filter="USA"]').click()
         expect(self.page.locator('[data-art="acw-usa-infantry"]')).to_be_visible()
@@ -89,7 +196,7 @@ class WorkshopTests(unittest.TestCase):
           const {catalog} = await import('./src/catalog.js');
           const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
           const {prepareArtwork, createPDF} = await import('./src/render.js');
-          const arts = catalog.filter(a => a.era === 'american-civil-war');
+          const arts = catalog.filter(a => ['acw-csa-infantry','acw-usa-infantry'].includes(a.id));
           const setup = defaultSetup();
           setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
           const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
@@ -265,7 +372,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_rohan_hero_square_base_and_export(self):
         self.page.locator('[data-filter="Rohan"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 5)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 8)
         result = self.page.evaluate("""async () => {
           const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
           const {catalog} = await import('./src/catalog.js');

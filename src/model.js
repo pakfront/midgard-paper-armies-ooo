@@ -3,8 +3,9 @@ import {pack} from './packing.js';
 
 export function defaultSetup() {
   return {version: 1, nameplates: false, names: {}, copyNames: {}, ranks: 2, riders: 4, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
-    groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'a4', orientation: 'portrait', margin: 10, gap: 4, guides: true,
-    quantities: Object.fromEntries(catalog.map((art, i) => [art.id, i < 4 ? 1 : 0]))};
+    cavalryBaseDepth: 20, figureBackground: 'solid', gradientBottom: '#456b94', gradientTop: '#eef7ff', labelPlacement: 'separate',
+    groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'letter', orientation: 'portrait', margin: 10, gap: 4, guides: true,
+    quantities: Object.fromEntries(catalog.map(art => [art.id, ['gondor-swords', 'gondor-horse', 'orc-axes', 'orc-wargs'].includes(art.id) ? 1 : 0]))};
 }
 
 export function validateSetup(input) {
@@ -18,12 +19,17 @@ export function validateSetup(input) {
   number('ranks', 1, 4, true); number('riders', 2, 4, true);
   number('infantryHeight', 10, 30); number('mountedHeight', 15, 30);
   number('margin', 5, 25); number('gap', 2, 10);
+  for (const [key, values] of Object.entries({cavalryBaseDepth: [20, 40], figureBackground: ['solid', 'gradient'], labelPlacement: ['separate', 'attached']})) {
+    if (input[key] === undefined) continue;
+    if (!values.includes(input[key])) throw Error(`Invalid ${key}.`);
+    result[key] = input[key];
+  }
   for (const [key, values] of Object.entries({reverse: ['silhouette', 'blank'], paper: ['a4', 'letter'], orientation: ['portrait', 'landscape']})) {
     if (!values.includes(input[key])) throw Error(`Invalid ${key}.`);
     result[key] = input[key];
   }
-  for (const key of ['groundColor', 'figureColor', 'silhouetteColor']) {
-    if (key === 'silhouetteColor' && input[key] === undefined) continue;
+  for (const key of ['groundColor', 'figureColor', 'silhouetteColor', 'gradientBottom', 'gradientTop']) {
+    if (['silhouetteColor', 'gradientBottom', 'gradientTop'].includes(key) && input[key] === undefined) continue;
     if (typeof input[key] !== 'string' || !/^#[0-9a-f]{6}$/i.test(input[key])) throw Error(`Invalid ${key}.`);
     result[key] = input[key].toLowerCase();
   }
@@ -63,7 +69,7 @@ export function validateSetup(input) {
 // Each pair doubles back at its crest; only flat feet contribute to the base span.
 export function makeStrip(art, setup, copy = 1) {
   const mounted = art.kind === 'Mounted';
-  const baseWidth = art.baseWidth ?? 40, baseDepth = art.baseDepth ?? 20;
+  const baseWidth = art.baseWidth ?? 40, baseDepth = mounted && !art.hero ? (setup.cavalryBaseDepth ?? 20) : (art.baseDepth ?? 20);
   const width = mounted ? baseDepth : baseWidth, span = mounted ? baseWidth : baseDepth;
   const count = art.uprightCount ?? (art.hero ? 1 : mounted ? setup.riders : setup.ranks);
   const panelHeight = art.panelHeight ?? (mounted ? setup.mountedHeight : setup.infantryHeight);
@@ -79,16 +85,27 @@ export function makeStrip(art, setup, copy = 1) {
     folds.push({y, kind: 'valley'});
     add('ground', rank === count - 1 ? pitch / 2 : pitch);
   }
-  return {art, copy, name: art.name, baseWidth, baseDepth, width, height: y, count, span, panelHeight, pitch, sections, folds};
+  const strip = {art, copy, name: art.name, baseWidth, baseDepth, width, height: y, bodyWidth: width, bodyHeight: y, count, span, panelHeight, pitch, sections, folds};
+  if (setup.nameplates && setup.labelPlacement === 'attached') {
+    strip.labelName = setup.copyNames?.[art.id]?.[copy - 1] || setup.names?.[art.id] || art.name;
+    // Mounted rear edges are along the side of the net. The full-width label
+    // attaches to the first end foot; slit the remaining shared edge free.
+    strip.labelFlap = mounted
+      ? {side: true, x: width, y: 0, width: 10, height: baseWidth, attachment: pitch / 2}
+      : {side: false, x: 0, y, width, height: 10, attachment: width};
+    if (mounted) strip.width += 10;
+    else strip.height += 10;
+  }
+  return strip;
 }
 
 export function layoutSetup(setup) {
   setup = validateSetup(setup);
   const items = catalog.flatMap(art => Array.from({length: setup.quantities[art.id]}, (_, i) => makeStrip(art, setup, i + 1)));
-  const labels = setup.nameplates ? items.map(strip => ({
+  const labels = setup.nameplates && setup.labelPlacement === 'separate' ? items.map(strip => ({
     kind: 'nameplate', art: strip.art, copy: strip.copy,
     name: setup.copyNames[strip.art.id]?.[strip.copy - 1] || setup.names[strip.art.id] || strip.art.name,
     width: strip.baseWidth - 2, height: 4, sections: []
   })) : [];
-  return {...pack([...items, ...labels], setup), setup, total: items.length, labelTotal: labels.length};
+  return {...pack([...items, ...labels], setup), setup, total: items.length, labelTotal: setup.nameplates ? items.length : 0};
 }

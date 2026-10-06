@@ -21,9 +21,10 @@ async function sourceImage(art) {
   return imageCache.get(art.id);
 }
 
-export function panelKey(strip, variant, silhouetteColor = '#cccccc') { return `${strip.art.id}:${strip.width}:${strip.panelHeight}:${variant}${variant === 'silhouette' ? ':' + silhouetteColor : ''}`; }
+export function panelKey(strip, variant, silhouetteColor = '#cccccc') { return `${strip.art.id}:${strip.bodyWidth ?? strip.width}:${strip.panelHeight}:${variant}${variant === 'silhouette' ? ':' + silhouetteColor : ''}`; }
 
 async function panelImage(strip, variant, silhouetteColor = '#cccccc') {
+  strip = {...strip, width: strip.bodyWidth ?? strip.width};
   const key = panelKey(strip, variant, silhouetteColor);
   if (panelCache.has(key)) return panelCache.get(key);
   const work = (async () => {
@@ -82,7 +83,10 @@ function fittedLabel(strip) {
 export async function prepareArtwork(layout) {
   if (layout.setup.nameplates) {
     await prepareLabelFont();
-    for (const item of layout.pages.flat()) if (item.kind === 'nameplate') fittedLabel(item);
+    for (const item of layout.pages.flat()) {
+      if (item.kind === 'nameplate') fittedLabel(item);
+      if (item.labelFlap) fittedLabel({art: item.art, copy: item.copy, name: item.labelName, width: item.baseWidth - 2});
+    }
   }
   const jobs = new Map();
   for (const page of layout.pages) for (const strip of page) for (const section of strip.sections) {
@@ -91,7 +95,25 @@ export async function prepareArtwork(layout) {
   const results = new Map();
   // Decode one panel at a time to limit memory on phones.
   for (const [key, args] of jobs) results.set(key, await panelImage(...args));
+  if (layout.setup.figureBackground === 'gradient') {
+    for (const strip of layout.pages.flat()) for (const section of strip.sections) {
+      if (section.kind !== 'face') continue;
+      const key = gradientKey(strip, section, layout.setup);
+      if (results.has(key)) continue;
+      const canvas = makeCanvas(2, Math.round(strip.panelHeight * PX_PER_MM)), ctx = canvas.getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      const front = section.side === 'front';
+      gradient.addColorStop(0, front ? layout.setup.gradientBottom : layout.setup.gradientTop);
+      gradient.addColorStop(1, front ? layout.setup.gradientTop : layout.setup.gradientBottom);
+      ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      results.set(key, {key, url: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height});
+    }
+  }
   return results;
+}
+
+export function gradientKey(strip, section, setup) {
+  return `gradient:${strip.panelHeight}:${section.side}:${setup.gradientBottom}:${setup.gradientTop}`;
 }
 
 const ink = '#3e473f';
@@ -104,13 +126,13 @@ export function contrast(hex) {
 export function pageScene(layout, index) {
   const {width, height, setup, margin} = layout, ops = [];
   const rect = (x, y, w, h, fill, stroke, thickness = .12) => ops.push({type: 'rect', x, y, w, h, fill, stroke, thickness});
-  const text = (value, x, y, size = 2, color = ink) => ops.push({type: 'text', value, x, y, size, color});
+  const text = (value, x, y, size = 2, color = ink, rotation = 0) => ops.push({type: 'text', value, x, y, size, color, rotation});
   const line = (x, y, x2, y2, color = ink, thickness = .14, dash = []) => ops.push({type: 'line', x, y, x2, y2, color, thickness, dash});
   rect(0, 0, width, height, '#ffffff');
-  text('PAPER ARMY STANDEES / units 40 x 20 mm; heroes 20 x 20 mm', margin, margin + 2, 3);
+  text(`PAPER ARMY STANDEES / units 40 x 20 mm; cavalry 40 x ${setup.cavalryBaseDepth} mm; heroes 20 x 20 mm`, margin, margin + 2, 2.7);
   text('Print at 100% / actual size. Cut solid outlines; fold dashed crests and dotted feet.', margin, margin + 6, 2);
   for (const strip of layout.pages[index]) {
-    const {x, y, width: w, sections} = strip;
+    const {x, y, sections} = strip, w = strip.bodyWidth ?? strip.width;
     text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? ' / label' : ''}`, x, strip.captionY, w === 20 ? 1.7 : 2);
     if (strip.kind === 'nameplate') {
       const {size, textWidth} = fittedLabel(strip);
@@ -120,7 +142,9 @@ export function pageScene(layout, index) {
     }
     for (const section of sections) {
       const sy = y + section.y;
-      rect(x, sy, w, section.height, section.kind === 'ground' ? setup.groundColor : setup.figureColor);
+      if (section.kind === 'face' && setup.figureBackground === 'gradient') {
+        ops.push({type: 'image', key: gradientKey(strip, section, setup), x, y: sy, w, h: section.height});
+      } else rect(x, sy, w, section.height, section.kind === 'ground' ? setup.groundColor : setup.figureColor);
       if (section.kind === 'face' && section.variant !== 'blank') {
         ops.push({type: 'image', key: panelKey(strip, section.variant, setup.silhouetteColor), x, y: sy, w, h: section.height});
       }
@@ -131,7 +155,42 @@ export function pageScene(layout, index) {
       line(x, y + fold.y, x + w, y + fold.y, '#ffffff', .35, mountain ? [1.2, .8] : [.3, .6]);
       line(x, y + fold.y, x + w, y + fold.y, mountain ? '#8f6333' : '#517e94', .15, mountain ? [1.2, .8] : [.3, .6]);
     }
-    rect(x, y, w, strip.height, null, '#59645c');
+    if (!strip.labelFlap) rect(x, y, w, strip.height, null, '#59645c');
+    else {
+      const flap = strip.labelFlap, fx = x + flap.x, fy = y + flap.y;
+      rect(fx, fy, flap.width, flap.height, '#ffffff');
+      const {size, textWidth} = fittedLabel({art: strip.art, copy: strip.copy, name: strip.labelName, width: strip.baseWidth - 2});
+      if (flap.side) {
+        // Full label attaches only to the first foot; the solid shared edge is a slit.
+        line(x, y, fx + 10, y, '#59645c');
+        line(fx + 10, y, fx + 10, y + flap.height, '#59645c');
+        line(fx + 10, y + flap.height, fx, y + flap.height, '#59645c');
+        line(fx, y + flap.attachment, fx, y + strip.bodyHeight, '#59645c');
+        line(fx, y + strip.bodyHeight, x, y + strip.bodyHeight, '#59645c');
+        line(x, y + strip.bodyHeight, x, y, '#59645c');
+        text(strip.labelName, fx + 7.5 - size * .35, fy + (flap.height - textWidth) / 2, size, '#000000', 90);
+      } else {
+        line(x, y, x + w, y, '#59645c');
+        line(x + w, y, x + w, y + strip.height, '#59645c');
+        line(x + w, y + strip.height, x, y + strip.height, '#59645c');
+        line(x, y + strip.height, x, y, '#59645c');
+        text(strip.labelName, fx + (w - textWidth) / 2, fy + 7.5 + size * .35, size, '#000000');
+      }
+      if (setup.guides) {
+        const guide = (ax, ay, bx, by, mountain) => {
+          const dash = mountain ? [1.2, .8] : [.3, .6];
+          line(ax, ay, bx, by, '#ffffff', .35, dash);
+          line(ax, ay, bx, by, mountain ? '#8f6333' : '#517e94', .15, dash);
+        };
+        if (flap.side) {
+          guide(fx, fy, fx, fy + flap.attachment, false);
+          guide(fx + 5, fy, fx + 5, fy + flap.height, true);
+        } else {
+          guide(fx, fy, fx + w, fy, false);
+          guide(fx, fy + 5, fx + w, fy + 5, true);
+        }
+      }
+    }
   }
   const rulerY = height - margin - 4;
   line(margin, rulerY, margin + 40, rulerY, '#000000');
@@ -147,7 +206,7 @@ export function previewSVG(layout, index, assets) {
   const elements = pageScene(layout, index).map(op => {
     if (op.type === 'rect') return `<rect x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" fill="${op.fill || 'none'}" stroke="${op.stroke || 'none'}" stroke-width="${op.thickness}"/>`;
     if (op.type === 'line') return `<line x1="${op.x}" y1="${op.y}" x2="${op.x2}" y2="${op.y2}" stroke="${op.color}" stroke-width="${op.thickness}" stroke-dasharray="${op.dash.join(' ')}"/>`;
-    if (op.type === 'text') return `<text x="${op.x}" y="${op.y}" font-family="Helvetica,Arial,sans-serif" font-size="${op.size}" fill="${op.color}">${escape(op.value)}</text>`;
+    if (op.type === 'text') return `<text x="${op.x}" y="${op.y}" transform="rotate(${op.rotation} ${op.x} ${op.y})" font-family="Helvetica,Arial,sans-serif" font-size="${op.size}" fill="${op.color}">${escape(op.value)}</text>`;
     return `<image x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" preserveAspectRatio="none" href="${assets.get(op.key).url}"/>`;
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${layout.width} ${layout.height}" role="img" aria-label="Print sheet ${index + 1}">${elements.join('')}</svg>`;
@@ -156,10 +215,10 @@ export function previewSVG(layout, index, assets) {
 export async function createPDF(layout, assets, progress = () => {}) {
   if (!layout.pages.length) throw Error('Choose at least one base to print.');
   if (!globalThis.PDFLib) throw Error('The PDF library did not load. Reload the page and check the vendor folder.');
-  const {PDFDocument, StandardFonts, rgb} = globalThis.PDFLib;
+  const {PDFDocument, StandardFonts, rgb, degrees} = globalThis.PDFLib;
   const doc = await PDFDocument.create(), font = await doc.embedFont(StandardFonts.Helvetica);
   doc.setTitle('Paper Army Standees'); doc.setCreator('Paper Army Standees workshop');
-  doc.setSubject('Units 40 x 20 mm; heroes 20 x 20 mm. Print at 100 percent / actual size.');
+  doc.setSubject(`Units 40 x 20 mm; cavalry 40 x ${layout.setup.cavalryBaseDepth} mm; heroes 20 x 20 mm. Print at 100 percent / actual size.`);
   const point = 72 / 25.4, embedded = new Map();
   const color = hex => rgb(...[1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255));
   for (let i = 0; i < layout.pages.length; i++) {
@@ -173,7 +232,7 @@ export async function createPDF(layout, assets, progress = () => {}) {
         end: {x: op.x2 * point, y: (layout.height - op.y2) * point}, color: color(op.color), thickness: op.thickness * point,
         dashArray: op.dash.map(n => n * point)});
       else if (op.type === 'text') page.drawText(op.value, {x: op.x * point, y: (layout.height - op.y) * point,
-        size: op.size * point, font, color: color(op.color)});
+        size: op.size * point, font, color: color(op.color), rotate: degrees(-op.rotation)});
       else {
         if (!embedded.has(op.key)) embedded.set(op.key, await doc.embedPng(assets.get(op.key).url));
         page.drawImage(embedded.get(op.key), {x: op.x * point, y: (layout.height - op.y - op.h) * point, width: op.w * point, height: op.h * point});

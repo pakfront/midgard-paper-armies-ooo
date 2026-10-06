@@ -3,9 +3,9 @@ import {defaultSetup, validateSetup, layoutSetup, makeStrip} from './model.js';
 import {prepareArtwork, previewSVG, createPDF} from './render.js';
 
 const $ = id => document.getElementById(id), storageKey = 'uprights.setup.v1';
-const fields = {ranks: 'ranks', riders: 'riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
+const fields = {cavalryBaseDepth: 'cavalry-base-depth', figureBackground: 'figure-background', gradientBottom: 'gradient-bottom', gradientTop: 'gradient-top', labelPlacement: 'label-placement', ranks: 'ranks', riders: 'riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
   groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides', nameplates: 'nameplates'};
-const numeric = new Set(['ranks', 'riders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
+const numeric = new Set(['cavalryBaseDepth', 'ranks', 'riders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
 let setup = defaultSetup(), currentLayout = null, currentAssets = null, pageIndex = 0, revision = 0, timer, exporting = false;
 
 const notice = document.createElement('p'); notice.className = 'notice'; notice.hidden = true; notice.setAttribute('role', 'status');
@@ -75,30 +75,33 @@ function counts() {
   for (const art of catalog) document.querySelector(`[data-art="${art.id}"]`).classList.toggle('selected', setup.quantities[art.id] > 0);
   $('ground-value').textContent = setup.groundColor; $('figure-value').textContent = setup.figureColor;
   $('silhouette-value').textContent = setup.silhouetteColor;
+  $('label-placement').disabled = !setup.nameplates;
+  $('figure-color').disabled = setup.figureBackground !== 'solid';
+  $('gradient-bottom').disabled = $('gradient-top').disabled = setup.figureBackground !== 'gradient';
   $('silhouette-color').disabled = setup.reverse !== 'silhouette';
 }
 
 function diagram() {
-  const infantry = makeStrip(catalog[0], setup), cavalry = makeStrip(catalog[1], setup);
+  const infantry = makeStrip(catalog.find(art => art.id === 'gondor-swords'), setup), cavalry = makeStrip(catalog.find(art => art.id === 'gondor-horse'), setup);
   const ground = setup.groundColor;
-  const svg = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 172" role="img" aria-label="Infantry folds parallel to the 40 millimetre frontage; cavalry folds parallel to the 20 millimetre depth. Flat feet between doubled upright panels."><g font-family="system-ui,sans-serif" fill="#344035">`];
+  const svg = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 245" role="img" aria-label="Infantry folds parallel to the 40 millimetre frontage; cavalry folds parallel to the selected base depth. Flat feet between doubled upright panels."><g font-family="system-ui,sans-serif" fill="#344035">`];
   for (const [i, strip] of [infantry, cavalry].entries()) {
-    const left = 25 + i * 215, top = 28;
-    svg.push(`<text x="${left}" y="14" font-size="10" font-weight="600">${i ? 'CAVALRY' : 'INFANTRY'} · top view</text><rect x="${left}" y="${top}" width="140" height="70" rx="2" fill="${ground}" stroke="#6c7767"/>`);
+    const left = 25 + i * 215, top = 28, depth = strip.baseDepth * 3.5;
+    svg.push(`<text x="${left}" y="14" font-size="10" font-weight="600">${i ? 'CAVALRY' : 'INFANTRY'} · top view</text><rect x="${left}" y="${top}" width="140" height="${depth}" rx="2" fill="${ground}" stroke="#6c7767"/>`);
     for (let j = 0; j < strip.count; j++) {
       const t = (j + .5) / strip.count;
-      const x1 = i ? left + 140 * t : left, y1 = i ? top : top + 70 * t;
-      const x2 = i ? x1 : left + 140, y2 = i ? top + 70 : y1;
+      const x1 = i ? left + 140 * t : left, y1 = i ? top : top + depth * t;
+      const x2 = i ? x1 : left + 140, y2 = i ? top + depth : y1;
       svg.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="white" stroke-width="5"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#294d3d" stroke-width="2.5"/>`);
     }
-    svg.push(`<text x="${left + 70}" y="111" text-anchor="middle" font-size="9">40 mm frontage</text><text x="${left + 148}" y="${top + 35}" font-size="8" transform="rotate(-90 ${left + 148} ${top + 35})" text-anchor="middle">20 mm depth</text>`);
+    svg.push(`<text x="${left + 70}" y="${top + depth + 13}" text-anchor="middle" font-size="9">40 mm frontage</text><text x="${left + 148}" y="${top + depth / 2}" font-size="8" transform="rotate(-90 ${left + 148} ${top + depth / 2})" text-anchor="middle">${strip.baseDepth} mm depth</text>`);
   }
-  svg.push('<text x="25" y="136" font-size="9">Flat feet + doubled upright panels (edge view)</text><path d="M25 163 H60 V143 H63 V163 H108 V143 H111 V163 H150" fill="none" stroke="#294d3d" stroke-width="2"/><line x1="25" y1="166" x2="150" y2="166" stroke="#9caa7c" stroke-width="3"/><text x="180" y="160" font-size="9">Fold at the crest; glue faces back-to-back.</text></g></svg>');
+  svg.push('<text x="25" y="206" font-size="9">Flat feet + doubled upright panels (edge view)</text><path d="M25 233 H60 V213 H63 V233 H108 V213 H111 V233 H150" fill="none" stroke="#294d3d" stroke-width="2"/><line x1="25" y1="236" x2="150" y2="236" stroke="#9caa7c" stroke-width="3"/><text x="180" y="230" font-size="9">Fold at the crest; glue faces back-to-back.</text></g></svg>');
   $('fold-diagram').innerHTML = svg.join('');
-  $('fold-description').textContent = `Infantry: ${infantry.width} × ${+infantry.height.toFixed(2)} mm unfolded, ${+infantry.pitch.toFixed(2)} mm between ranks. Cavalry: ${cavalry.width} × ${+cavalry.height.toFixed(2)} mm unfolded, ${+cavalry.pitch.toFixed(2)} mm between riders. Flat feet total 20 mm for infantry and 40 mm for cavalry.`;
+  $('fold-description').textContent = `Infantry: ${infantry.width} × ${+infantry.height.toFixed(2)} mm unfolded, ${+infantry.pitch.toFixed(2)} mm between ranks. Cavalry: ${cavalry.width} × ${+cavalry.height.toFixed(2)} mm unfolded, ${+cavalry.pitch.toFixed(2)} mm between riders. Flat feet total 20 mm for infantry and 40 mm for cavalry.${setup.nameplates && setup.labelPlacement === 'attached' ? ' Attached labels add two 5 mm panels at the rear; cavalry uses a side flap attached to the first end foot.' : ''}`;
 }
 
-$('assembly').innerHTML = '<li>Print the PDF on one side of the paper at <strong>100% / actual size</strong>. Measure the 40 mm rule before cutting.</li><li>Score the dashed and dotted lines, then cut each complete rectangular strip along its solid outline. Keep the connecting ground sections intact.</li><li>Mountain-fold each dashed crest, bringing the unprinted backs of the paired figure panels together. Glue those backs to form a doubled upright.</li><li>Valley-fold the dotted lines at the feet. Glue the undersides of the colored ground sections to your matching base (40 × 20 mm units; 20 × 20 mm heroes), with the colored faces showing.</li><li>Infantry ranks run across the 40 mm frontage. Cavalry profiles run along the 20 mm depth, side by side across the frontage. Keep the rectangular figure panels for this first version; the background color fills their open spaces.</li><li>If nameplates are enabled, cut the separate nameplates (38 × 4 mm units; 18 × 4 mm heroes) and glue each to its matching base. Captions identify the artwork and base number.</li>';
+$('assembly').innerHTML = '<li>Print the PDF on one side of the paper at <strong>100% / actual size</strong>. Measure the 40 mm rule before cutting.</li><li>Score the dashed and dotted lines, then cut each complete net along its solid outline. For attached cavalry labels, also cut the solid slit between the side flap and the figure strip; keep its connection to the first ground foot. Keep the connecting ground sections intact.</li><li>Mountain-fold each dashed crest, bringing the unprinted backs of the paired figure panels together. Glue those backs to form a doubled upright.</li><li>Valley-fold the dotted lines at the feet. Glue the undersides of the colored ground sections to your matching base (40 × 20 mm Foot and Monstrosities; selected 40 × 20 or 40 × 40 mm Cavalry; 20 × 20 mm Heroes), with the colored faces showing.</li><li>Infantry ranks run across the 40 mm frontage. Cavalry profiles run along the selected base depth, side by side across the frontage. Keep the rectangular figure panels for this first version; the background color fills their open spaces.</li><li>For attached labels, valley-fold the label at the rear base edge, mountain-fold its crest, and glue the two 5 mm panels back-to-back. For separate labels, cut the nameplates (38 × 4 mm units; 18 × 4 mm heroes) and glue each to its matching base. Captions identify the artwork and base number.</li>';
 
 function status(message, error = false) { $('status').textContent = message; $('status').classList.toggle('error', error); }
 function showPage() {

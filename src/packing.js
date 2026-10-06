@@ -4,7 +4,7 @@ export function paperSize(paper, orientation) {
   return orientation === 'landscape' ? size.reverse() : size;
 }
 
-export function pack(items, {paper = 'a4', orientation = 'portrait', margin = 10, gap = 4} = {}) {
+export function pack(items, {paper = 'letter', orientation = 'portrait', margin = 10, gap = 4} = {}) {
   const [width, height] = paperSize(paper, orientation);
   // Reserve space for page title, strip captions, and a calibration rule.
   const top = margin + 9, bottom = height - margin - 9, caption = 4;
