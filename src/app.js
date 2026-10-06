@@ -3,9 +3,10 @@ import {defaultSetup, validateSetup, layoutSetup, makeStrip} from './model.js';
 import {prepareArtwork, previewSVG, createPDF} from './render.js';
 
 const $ = id => document.getElementById(id), storageKey = 'uprights.setup.v1';
-const fields = {cavalryBaseDepth: 'cavalry-base-depth', figureBackground: 'figure-background', gradientBottom: 'gradient-bottom', gradientTop: 'gradient-top', labelPlacement: 'label-placement', ranks: 'ranks', riders: 'riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
+const fields = {fakeShadows: 'fake-shadows', cavalryBaseDepth: 'cavalry-base-depth', figureBackground: 'figure-background', gradientBottom: 'gradient-bottom', gradientTop: 'gradient-top', labelPlacement: 'label-placement', ranks: 'ranks', riders: 'riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
   groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides', nameplates: 'nameplates'};
 const numeric = new Set(['cavalryBaseDepth', 'ranks', 'riders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
+const boolean = new Set(['guides', 'nameplates', 'fakeShadows']);
 let setup = defaultSetup(), currentLayout = null, currentAssets = null, pageIndex = 0, revision = 0, timer, exporting = false;
 
 const notice = document.createElement('p'); notice.className = 'notice'; notice.hidden = true; notice.setAttribute('role', 'status');
@@ -34,7 +35,7 @@ for (const art of catalog) {
 }
 
 function writeControls() {
-  for (const [key, id] of Object.entries(fields)) { if (key === 'guides' || key === 'nameplates') $(id).checked = setup[key]; else $(id).value = setup[key]; }
+  for (const [key, id] of Object.entries(fields)) { if (boolean.has(key)) $(id).checked = setup[key]; else $(id).value = setup[key]; }
   for (const art of catalog) {
     $(`qty-${art.id}`).value = setup.quantities[art.id];
     $(`name-${art.id}`).value = setup.names[art.id] || '';
@@ -59,7 +60,7 @@ function syncCopyControls() {
 }
 function readControls() {
   const value = {version: 1, quantities: {}, names: {}, copyNames: {}};
-  for (const [key, id] of Object.entries(fields)) value[key] = (key === 'guides' || key === 'nameplates') ? $(id).checked : numeric.has(key) ? ($(id).value === '' ? NaN : Number($(id).value)) : $(id).value;
+  for (const [key, id] of Object.entries(fields)) value[key] = boolean.has(key) ? $(id).checked : numeric.has(key) ? ($(id).value === '' ? NaN : Number($(id).value)) : $(id).value;
   for (const art of catalog) {
     const input = $(`qty-${art.id}`); value.quantities[art.id] = input.value === '' ? NaN : Number(input.value);
     value.names[art.id] = $(`name-${art.id}`).value;

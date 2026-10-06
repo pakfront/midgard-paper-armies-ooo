@@ -1,4 +1,4 @@
-const imageCache = new Map(), panelCache = new Map();
+const imageCache = new Map(), panelCache = new Map(), shadowCache = new Map();
 const DPI = 600, PX_PER_MM = DPI / 25.4;
 const makeCanvas = (w, h) => Object.assign(document.createElement('canvas'), {width: w, height: h});
 
@@ -61,6 +61,48 @@ async function panelImage(strip, variant, silhouetteColor = '#cccccc') {
   try { return await work; } catch (error) { panelCache.delete(key); throw error; }
 }
 
+// Infantry uses short shadows on both sides. Mounted profiles cast one larger
+// silhouette toward increasing assembled frontage, onto the following foot.
+export function groundShadows(strip, section) {
+  if (!['Mounted', 'Infantry'].includes(strip.art.kind) || section.kind !== 'ground') return [];
+  const before = section.y > 0, after = section.y + section.height < strip.bodyHeight;
+  if (strip.art.kind === 'Mounted') {
+    if (!before) return [];
+    const height = Math.min(section.height - .5, strip.panelHeight * .8);
+    return height > 0 ? [{y: section.y + .25, height, flipped: true}] : [];
+  }
+  const height = Math.min(2.5, section.height / (before && after ? 2 : 1) - .5);
+  if (height <= 0) return [];
+  const shadows = [];
+  if (before) shadows.push({y: section.y + .25, height, flipped: true});
+  if (after) shadows.push({y: section.y + section.height - .25 - height, height, flipped: false});
+  return shadows;
+}
+
+export function shadowKey(strip, shadow) {
+  return `shadow:${panelKey(strip, 'silhouette', '#000000')}:${shadow.height}:${shadow.flipped}`;
+}
+
+async function shadowImage(strip, shadow) {
+  const key = shadowKey(strip, shadow);
+  if (shadowCache.has(key)) return shadowCache.get(key);
+  const work = (async () => {
+    // Reuse the exact figure placement and alpha so shadows follow its profile.
+    const panel = await panelImage(strip, 'silhouette', '#000000');
+    const image = new Image(); image.src = panel.url; await image.decode();
+    const canvas = makeCanvas(panel.width, Math.round(shadow.height * PX_PER_MM));
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.globalAlpha = .28;
+    if (shadow.flipped) { ctx.translate(0, canvas.height); ctx.scale(1, -1); }
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return {key, url: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height};
+  })();
+  if (shadowCache.size >= 32) shadowCache.delete(shadowCache.keys().next().value);
+  shadowCache.set(key, work);
+  try { return await work; } catch (error) { shadowCache.delete(key); throw error; }
+}
+
 let labelFont;
 let labelFontPromise;
 async function prepareLabelFont() {
@@ -95,6 +137,14 @@ export async function prepareArtwork(layout) {
   const results = new Map();
   // Decode one panel at a time to limit memory on phones.
   for (const [key, args] of jobs) results.set(key, await panelImage(...args));
+  if (layout.setup.fakeShadows) {
+    for (const strip of layout.pages.flat()) for (const section of strip.sections) {
+      for (const shadow of groundShadows(strip, section)) {
+        const key = shadowKey(strip, shadow);
+        if (!results.has(key)) results.set(key, await shadowImage(strip, shadow));
+      }
+    }
+  }
   if (layout.setup.figureBackground === 'gradient') {
     for (const strip of layout.pages.flat()) for (const section of strip.sections) {
       if (section.kind !== 'face') continue;
@@ -145,6 +195,9 @@ export function pageScene(layout, index) {
       if (section.kind === 'face' && setup.figureBackground === 'gradient') {
         ops.push({type: 'image', key: gradientKey(strip, section, setup), x, y: sy, w, h: section.height});
       } else rect(x, sy, w, section.height, section.kind === 'ground' ? setup.groundColor : setup.figureColor);
+      if (setup.fakeShadows) for (const shadow of groundShadows(strip, section)) {
+        ops.push({type: 'image', key: shadowKey(strip, shadow), x, y: y + shadow.y, w, h: shadow.height});
+      }
       if (section.kind === 'face' && section.variant !== 'blank') {
         ops.push({type: 'image', key: panelKey(strip, section.variant, setup.silhouetteColor), x, y: sy, w, h: section.height});
       }

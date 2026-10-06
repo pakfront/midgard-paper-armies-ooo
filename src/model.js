@@ -3,7 +3,7 @@ import {pack} from './packing.js';
 
 export function defaultSetup() {
   return {version: 1, nameplates: false, names: {}, copyNames: {}, ranks: 2, riders: 4, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
-    cavalryBaseDepth: 20, figureBackground: 'solid', gradientBottom: '#456b94', gradientTop: '#eef7ff', labelPlacement: 'separate',
+    cavalryBaseDepth: 20, fakeShadows: false, figureBackground: 'solid', gradientBottom: '#456b94', gradientTop: '#eef7ff', labelPlacement: 'separate',
     groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'letter', orientation: 'portrait', margin: 10, gap: 4, guides: true,
     quantities: Object.fromEntries(catalog.map(art => [art.id, ['gondor-swords', 'gondor-horse', 'orc-axes', 'orc-wargs'].includes(art.id) ? 1 : 0]))};
 }
@@ -35,6 +35,8 @@ export function validateSetup(input) {
   }
   if (typeof input.guides !== 'boolean') throw Error('Invalid fold guide setting.');
   result.guides = input.guides;
+  if (input.fakeShadows !== undefined && typeof input.fakeShadows !== 'boolean') throw Error('Invalid fake shadow setting.');
+  result.fakeShadows = input.fakeShadows ?? false;
   if (!input.quantities || typeof input.quantities !== 'object' || Array.isArray(input.quantities)) throw Error('Missing unit quantities.');
   if (input.nameplates !== undefined && typeof input.nameplates !== 'boolean') throw Error('Invalid nameplate setting.');
   result.nameplates = input.nameplates ?? false;

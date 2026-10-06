@@ -51,6 +51,84 @@ class WorkshopTests(unittest.TestCase):
     def ready(self):
         expect(self.page.locator('#download')).to_be_enabled(timeout=30000)
 
+    def test_fake_ground_shadows_profiles_alpha_geometry_pdf_and_storage(self):
+        expect(self.page.locator('#fake-shadows')).not_to_be_checked()
+        self.page.locator('#fake-shadows').check()
+        self.ready()
+        with self.page.expect_download() as saved:
+            self.page.locator('#save').click()
+        payload = Path(saved.value.path()).read_bytes()
+        self.assertTrue(json.loads(payload)['fakeShadows'])
+        self.page.locator('#fake-shadows').uncheck()
+        self.page.locator('#load-file').set_input_files({'name': 'shadows.json', 'mimeType': 'application/json', 'buffer': payload})
+        self.ready()
+        self.page.reload()
+        self.ready()
+        expect(self.page.locator('#fake-shadows')).to_be_checked()
+        result = self.page.evaluate('''async () => {
+          const {defaultSetup,layoutSetup,validateSetup}=await import('./src/model.js');
+          const {prepareArtwork,pageScene,createPDF,previewSVG,groundShadows}=await import('./src/render.js');
+          const legacy=defaultSetup();delete legacy.fakeShadows;
+          let invalid=false;try{validateSetup({...defaultSetup(),fakeShadows:'yes'})}catch{invalid=true}
+          const results=[];
+          for(const depth of [20,40])for(const riders of [2,4]) {
+            const setup={...defaultSetup(),fakeShadows:true,cavalryBaseDepth:depth,riders,
+              figureBackground:'gradient',nameplates:true,labelPlacement:'attached',names:{'rohan-foot-captain':'Captain'},
+              quantities:{'gondor-horse':1,'rohan-eowyn':1,'rohan-foot-captain':1,'gondor-swords':1,'orc-troll':1}};
+            const layout=layoutSetup(setup),assets=await prepareArtwork(layout);
+            const off=layoutSetup({...setup,fakeShadows:false});
+            const strips=[];
+            for(const [i,page] of layout.pages.entries()) {
+              const ops=pageScene(layout,i);
+              for(const s of page) {
+                const shadowOps=ops.filter(o=>o.key?.startsWith('shadow:')&&o.x===s.x&&o.y>=s.y&&o.y<s.y+s.height);
+                const grounds=s.sections.filter(g=>g.kind==='ground');
+                const shapes=grounds.flatMap(g=>groundShadows(s,g));
+                strips.push({eligible:['Mounted','Infantry'].includes(s.art.kind),mounted:s.art.kind==='Mounted',count:s.count,shadows:shadowOps.length,
+                  within:shadowOps.every(o=>o.w===s.bodyWidth&&grounds.some(g=>o.y>=s.y+g.y&&o.y+o.h<=s.y+g.y+g.height)),
+                  squashed:shadowOps.every(o=>o.h< s.panelHeight&&(s.art.kind==='Mounted'?o.h<=s.panelHeight*.8:o.h<=2.5)),
+                  oneDirection:shapes.every(a=>a.flipped)&&groundShadows(s,grounds[0]).length===0,
+                  fillsSpace:grounds.filter(g=>g.y>0).every(g=>groundShadows(s,g).every(a=>a.height>=g.height*.75))});
+              }
+            }
+            const sample=[...assets.values()].find(a=>a.key.startsWith('shadow:'));
+            const im=new Image();im.src=sample.url;await im.decode();
+            const c=document.createElement('canvas');c.width=im.width;c.height=im.height;
+            const ctx=c.getContext('2d');ctx.drawImage(im,0,0);
+            const data=ctx.getImageData(0,0,c.width,c.height).data;
+            let visible=0,clear=0,maxAlpha=0,wrongRGB=0;
+            for(let i=0;i<data.length;i+=4) {
+              if(data[i+3]) {visible++;wrongRGB+=Number(data[i]!==0||data[i+1]!==0||data[i+2]!==0)}else clear++;
+              maxAlpha=Math.max(maxAlpha,data[i+3]);
+            }
+            const bytes=await createPDF(layout,assets),pdf=await PDFLib.PDFDocument.load(bytes);
+            results.push({strips,visible,clear,maxAlpha,wrongRGB,pages:pdf.getPageCount(),expected:layout.pages.length,
+              preview:layout.pages.some((_,i)=>previewSVG(layout,i,assets).includes(sample.url)),
+              sameBounds:JSON.stringify(layout.pages.map(p=>p.map(s=>[s.x,s.y,s.width,s.height])))===JSON.stringify(off.pages.map(p=>p.map(s=>[s.x,s.y,s.width,s.height]))),
+              off:off.pages.some((_,i)=>pageScene(off,i).some(o=>o.key?.startsWith('shadow:')))});
+          }
+          return {results,legacy:validateSetup(legacy).fakeShadows,invalid};
+        }''')
+        self.assertFalse(result['legacy'])
+        self.assertTrue(result['invalid'])
+        for layout in result['results']:
+            self.assertTrue(layout['sameBounds'])
+            self.assertFalse(layout['off'])
+            self.assertTrue(layout['preview'])
+            self.assertEqual(layout['pages'], layout['expected'])
+            self.assertGreater(layout['visible'], 100)
+            self.assertGreater(layout['clear'], 100)
+            self.assertGreater(layout['maxAlpha'], 60)
+            self.assertLessEqual(layout['maxAlpha'], 72)
+            self.assertEqual(layout['wrongRGB'], 0)
+            for strip in layout['strips']:
+                self.assertTrue(strip['within'])
+                self.assertTrue(strip['squashed'])
+                self.assertEqual(strip['shadows'], strip['count'] * (1 if strip['mounted'] else 2) if strip['eligible'] else 0)
+                if strip['mounted']:
+                    self.assertTrue(strip['oneDirection'])
+                    self.assertTrue(strip['fillsSpace'])
+
     def test_letter_square_cavalry_and_new_settings_round_trip(self):
         expect(self.page.locator('#paper')).to_have_value('letter')
         self.page.locator('#cavalry-base-depth').select_option('40')
