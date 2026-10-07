@@ -350,6 +350,54 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['assets'], 4)
         self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
 
+    def test_goblin_faction_light_troops_load_and_export(self):
+        self.page.locator('[data-filter="Goblins"]').click()
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 3)
+        self.assertEqual(self.page.locator('.art-card:visible:not([data-faction="Goblins"])').count(), 0)
+        for unit_id in ['goblin-archers', 'goblin-spears', 'goblin-warg-riders']:
+            expect(self.page.locator(f'[data-art="{unit_id}"]')).to_be_visible()
+        self.assertEqual(self.page.locator('#qty-gondor-swords').input_value(), '1')
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const arts = catalog.filter(a => a.faction === 'Goblins');
+          const images = await Promise.all(arts.map(a => new Promise((resolve, reject) => {
+            const img = new Image(); img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width; canvas.height = img.height;
+              const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+              const pixels = ctx.getImageData(0, 0, img.width, img.height).data;
+              let clear = 0, solid = 0;
+              for (let i = 3; i < pixels.length; i += 4) {
+                if (pixels[i] === 0) clear++;
+                if (pixels[i] === 255) solid++;
+              }
+              resolve({clear, solid});
+            }; img.onerror = reject; img.src = a.path;
+          })));
+          const setup = {...defaultSetup(), riders: 2};
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
+          return {images, total: layout.total, assets: assets.size, pdf: bytes.length,
+            pages: pdf.getPageCount(), expected: layout.pages.length,
+            strips: arts.map(a => {const s = makeStrip(a, setup);
+              return {kind: a.kind, base: [s.baseWidth, s.baseDepth], count: s.count,
+                backs: s.sections.filter(p => p.side === 'back').map(p => p.variant)};})};
+        }''')
+        self.assertEqual(result['total'], 3)
+        self.assertEqual(result['assets'], 6)
+        self.assertGreater(result['pdf'], 1000)
+        self.assertEqual(result['pages'], result['expected'])
+        for image in result['images']:
+            self.assertGreater(image['clear'], 0)
+            self.assertGreater(image['solid'], 0)
+        for strip in result['strips']:
+            self.assertEqual(strip['base'], [40, 20])
+            self.assertEqual(strip['count'], 2)
+            self.assertEqual(strip['backs'], ['mirror' if strip['kind'] == 'Mounted' else 'silhouette'] * 2)
+
     def test_gondor_light_units_load_and_export(self):
         self.page.locator('[data-filter="Gondor"]').click()
         for unit_id in ['gondor-militia', 'gondor-rangers']:

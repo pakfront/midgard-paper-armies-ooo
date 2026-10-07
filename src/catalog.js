@@ -4,6 +4,9 @@ export const eras = [
 ];
 
 export const catalog = [
+  {id: 'goblin-archers', name: 'Goblin archers', era: 'middle-earth-third-age', faction: 'Goblins', kind: 'Infantry', height: 13.5, file: 'goblin-archers.png', note: 'Light Foot · eight varied bowmen in a loose rank · 40 × 20 mm'},
+  {id: 'goblin-spears', name: 'Goblin spearmen', era: 'middle-earth-third-age', faction: 'Goblins', kind: 'Infantry', height: 13.5, file: 'goblin-spearmen.png', note: 'Light Foot · eight irregular spearmen in a loose rank · 40 × 20 mm'},
+  {id: 'goblin-warg-riders', name: 'Goblin light warg riders', era: 'middle-earth-third-age', faction: 'Goblins', kind: 'Mounted', height: 20, file: 'goblin-light-warg-rider-profile.png', note: 'Light Cavalry · lightly equipped rider · mirrored warg profile · 40 × 20 mm'},
   {id: 'isengard-warg-riders', name: 'Isengard Warg riders', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Mounted', height: 20, file: 'isengard-warg-rider-profile-contrast.png', note: 'Clean print style · mounted side profile · 40 × 20 mm'},
   {id: 'rohan-foot-captain', name: 'Rohan foot captain', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Infantry', hero: true, baseWidth: 20, baseDepth: 20, preserveAspect: true, file: 'rohan-foot-captain.png', note: 'Clean print style · single foot Hero · 20 × 20 mm'},
   {id: 'mordor-spearmen', name: 'Mordor Orc spearmen', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'mordor-orc-spearmen.png', note: 'Clean print style · eight figures · 40 × 20 mm'},
