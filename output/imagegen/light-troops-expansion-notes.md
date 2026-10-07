@@ -4,7 +4,7 @@ Generated with the built-in imagegen tool following `clean-style-tests-notes.md`
 
 Reference roles: the simplified Goblin spearmen establish illustration technique and loose layout for Dunlendings and Haradrim, not anatomy or equipment. Simplified Goblin archers establish technique and spacing for Mordor trackers. Rohan mounted spearmen establish faction colors and strict side profile for outriders; mail and ornament are omitted.
 
-Foot uses eight varied figures, existing infantry ranks and 40 × 20 mm bases. Outriders use the existing individual mirrored Cavalry profile and adjustable rider count. Choose two riders for a more spread-out base. Existing catalog IDs and geometry remain unchanged.
+Dunlendings and Haradrim use eight varied figures; Mordor trackers now use six (see `mordor-print-contrast-notes.md` for the superseding edit). All Foot uses existing infantry ranks and 40 × 20 mm bases. Outriders use the existing individual mirrored Cavalry profile and adjustable rider count. Choose two riders for a more spread-out base. Existing catalog IDs and geometry remain unchanged.
 
 ## Dunlending javelinmen
 

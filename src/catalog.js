@@ -5,7 +5,7 @@ export const eras = [
 
 export const catalog = [
   {id: 'isengard-dunlending-javelinmen', name: 'Dunlending javelinmen', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Infantry', height: 13.5, file: 'dunlending-javelinmen.png', note: 'Light Foot · eight varied hillmen with javelins · loose rank · 40 × 20 mm'},
-  {id: 'mordor-trackers', name: 'Mordor trackers', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'mordor-trackers.png', note: 'Skirmish Foot · eight lightly equipped Orc bowmen · loose rank · 40 × 20 mm'},
+  {id: 'mordor-trackers', name: 'Mordor trackers', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'mordor-trackers.png', note: 'Skirmish Foot · six Orc bowmen · Mordor palette · loose formation · 40 × 20 mm'},
   {id: 'rohan-outriders', name: 'Rohan outriders', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Mounted', height: 20, file: 'rohan-outrider-profile.png', note: 'Light Cavalry · spear and small shield · mirrored horse profile · 40 × 20 mm'},
   {id: 'harad-javelin-skirmishers', name: 'Haradrim javelin skirmishers', shortName: 'Haradrim skirmishers', era: 'middle-earth-third-age', faction: 'Harad', kind: 'Infantry', height: 13.5, file: 'harad-javelin-skirmishers.png', note: 'Skirmish Foot · eight varied javelinmen · loose rank · 40 × 20 mm'},
   {id: 'goblin-archers', name: 'Goblin archers', era: 'middle-earth-third-age', faction: 'Goblins', kind: 'Infantry', height: 13.5, file: 'goblin-archers.png', note: 'Light Foot · eight varied bowmen in a loose rank · 40 × 20 mm'},

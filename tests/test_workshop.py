@@ -350,6 +350,44 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['assets'], 4)
         self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
 
+    def test_mordor_faction_artwork_and_pdf_export(self):
+        self.page.locator('[data-filter="Mordor"]').click()
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 6)
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const arts = catalog.filter(a => a.faction === 'Mordor');
+          const images = await Promise.all(arts.map(a => new Promise((resolve, reject) => {
+            const img = new Image(); img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width; canvas.height = img.height;
+              const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+              const pixels = ctx.getImageData(0, 0, img.width, img.height).data;
+              let clear = 0, solid = 0;
+              for (let i = 3; i < pixels.length; i += 4) {
+                if (pixels[i] === 0) clear++;
+                if (pixels[i] === 255) solid++;
+              }
+              resolve({clear, solid});
+            }; img.onerror = reject; img.src = a.path;
+          })));
+          const setup = {...defaultSetup(), nameplates: true,
+            names: {'mordor-banner-bearer': 'Mordor herald'}};
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
+          return {images, total: layout.total, assets: assets.size, pdf: bytes.length,
+            pages: pdf.getPageCount(), expected: layout.pages.length};
+        }''')
+        self.assertEqual(result['total'], 6)
+        self.assertEqual(result['assets'], 12)
+        self.assertGreater(result['pdf'], 1000)
+        self.assertEqual(result['pages'], result['expected'])
+        for image in result['images']:
+            self.assertGreater(image['clear'], 0)
+            self.assertGreater(image['solid'], 0)
+
     def test_light_troop_expansion_factions_artwork_and_export(self):
         units = {'isengard-dunlending-javelinmen': 'Isengard', 'mordor-trackers': 'Mordor',
                  'rohan-outriders': 'Rohan', 'harad-javelin-skirmishers': 'Harad'}

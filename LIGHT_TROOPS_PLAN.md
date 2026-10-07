@@ -1,6 +1,6 @@
 # Light troops expansion plan
 
-Status: implemented and validated. All four units are integrated; changes are uncommitted.
+Status: implemented and validated; committed in `f6a84f8`. Mordor trackers were subsequently revised to six figures and the faction palette; see `output/imagegen/mordor-print-contrast-notes.md`.
 
 ## Scope
 
