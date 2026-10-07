@@ -121,3 +121,5 @@ python3 -m venv .venv
 ```
 
 Tests start their own local static server and check fold directions and ground totals, pixel alignment of mirrored faces, grey silhouette alpha, pagination and overlap, setup color save/load, PDF page dimensions and color commands, invalid/empty setups, and mobile layout. A physical fold test is still needed to assess your paper and printer.
+
+Isengard Uruk-hai, crossbowmen, and Warg riders use brighter steel midtones, clearer red cloth, and warmer wood/leather/fur for small-scale printing. Current artwork uses the three `*-contrast.png` variants in `artwork/middle-earth-third-age/Isengard/`; originals remain available. Exact edit prompts and paths are recorded in [Isengard contrast notes](output/imagegen/isengard-print-contrast-notes.md).

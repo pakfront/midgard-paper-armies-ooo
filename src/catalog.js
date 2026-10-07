@@ -4,7 +4,7 @@ export const eras = [
 ];
 
 export const catalog = [
-  {id: 'isengard-warg-riders', name: 'Isengard Warg riders', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Mounted', height: 20, file: 'isengard-warg-rider-profile.png', note: 'Clean print style · mounted side profile · 40 × 20 mm'},
+  {id: 'isengard-warg-riders', name: 'Isengard Warg riders', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Mounted', height: 20, file: 'isengard-warg-rider-profile-contrast.png', note: 'Clean print style · mounted side profile · 40 × 20 mm'},
   {id: 'rohan-foot-captain', name: 'Rohan foot captain', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Infantry', hero: true, baseWidth: 20, baseDepth: 20, preserveAspect: true, file: 'rohan-foot-captain.png', note: 'Clean print style · single foot Hero · 20 × 20 mm'},
   {id: 'mordor-spearmen', name: 'Mordor Orc spearmen', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'mordor-orc-spearmen.png', note: 'Clean print style · eight figures · 40 × 20 mm'},
   {id: 'mordor-morannon', name: 'Morannon Orcs', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'morannon-orcs.png', note: 'Clean print style · eight figures · 40 × 20 mm'},
@@ -19,8 +19,8 @@ export const catalog = [
   {id: 'gondor-swords', name: 'Gondor swordsmen', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-swordsmen-clean.png', note: 'Clean style · eight swordsmen'},
   {id: 'gondor-horse', name: 'Gondor mounted lancers', shortName: 'Gondor lancers', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Mounted', height: 20, file: 'gondor-lancer-profile.png', note: 'Clean style · mirrored horse profiles'},
   {id: 'orc-axes', name: 'Orc axemen', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Infantry', height: 13.5, file: 'orc-axemen-clean.png', note: 'Clean style · eight axemen'},
-  {id: 'isengard-uruk-hai', name: 'Isengard Uruk-hai', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Infantry', height: 13.5, file: 'isengard-uruk-hai-infantry.png', note: 'Eight armored Uruk-hai with spears and shields'},
-  {id: 'isengard-uruk-crossbows', name: 'Isengard Uruk-hai crossbowmen', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Infantry', height: 13.5, file: 'isengard-uruk-hai-crossbowmen.png', note: 'Eight armored Uruk-hai crossbowmen'},
+  {id: 'isengard-uruk-hai', name: 'Isengard Uruk-hai', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Infantry', height: 13.5, file: 'isengard-uruk-hai-infantry-contrast.png', note: 'Eight armored Uruk-hai with spears and shields'},
+  {id: 'isengard-uruk-crossbows', name: 'Isengard Uruk-hai crossbowmen', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Infantry', height: 13.5, file: 'isengard-uruk-hai-crossbowmen-contrast.png', note: 'Eight armored Uruk-hai crossbowmen'},
   {id: 'orc-wargs', name: 'Orc warg riders', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Mounted', height: 20, file: 'orc-warg-profile.png', note: 'Clean style · mirrored warg profiles'},
   {id: 'orc-warband', name: 'Orc warband', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Infantry', height: 14.136, file: 'orc-warband-unit-v2.png', note: 'Clean style · eight mixed warriors'},
   {id: 'gondor-spears', name: 'Gondor spearmen', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-spearmen-unit.png', note: 'Original textured style · eight spearmen'},
