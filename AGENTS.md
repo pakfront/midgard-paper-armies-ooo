@@ -15,6 +15,15 @@ Monstrosities is a generic category, not the name of a specific unit. Use descri
 
 Base dimensions and figure counts describe the assembled model. Upright layout follows the subject: heroes use a single upright; the existing Giant, Trolls, and Ogres units use one upright with fixed panel heights (35 mm for Giant; 23 mm for Trolls and Ogres). Monstrosities may be taller than ordinary foot figures. Preserve monster artwork proportions and keep complete figures and weapons within the print panel.
 
+## Light troops and skirmishers
+
+Light troops and skirmishers are roles within Foot or Cavalry, not additional unit types. Keep their normal base dimensions.
+
+- Light Foot troops use **7–8 figures as the baseline density**. Give them varied poses, uneven head heights, and individual differences in clothing and equipment rather than a regimented identical rank. Light equipment alone is not a reason to reduce figure count.
+- Skirmish Foot units use **fewer figures, normally 4–6**, with visible gaps, irregular spacing, and strongly varied poses. Mix standing, crouching, kneeling, aiming, reloading, or moving poses as appropriate to the weapons. Rangers of Gondor are the six-figure example.
+- When a unit is both light and a skirmisher, follow the skirmisher density. These Foot counts describe the figures in the artwork, not the configurable number of upright ranks. Cavalry continues to use individual side profiles and the existing configurable rider count.
+- For both roles, use the Orc clean-print style: bold contours, broad flat colors, only two or three large shading tones, minimal faces, and no fine texture, hatching, scratches, hair strands, or tiny fittings. Preserve complete figures and weapons within the print panel. Follow `output/imagegen/clean-style-tests-notes.md` and `output/imagegen/foot-print-simplification-notes.md` for prompt guidance.
+
 ## Existing implementation
 
 The catalog currently uses `kind: 'Infantry'` for Foot, `kind: 'Mounted'` for Cavalry and mounted Heroes, `hero: true` for Heroes, and `kind: 'Monster'` for Monstrosities. These internal fields control rendering and folding; the unit type definitions above also cover future foot heroes and war machines.

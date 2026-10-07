@@ -350,6 +350,60 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['assets'], 4)
         self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
 
+    def test_light_troop_expansion_factions_artwork_and_export(self):
+        units = {'isengard-dunlending-javelinmen': 'Isengard', 'mordor-trackers': 'Mordor',
+                 'rohan-outriders': 'Rohan', 'harad-javelin-skirmishers': 'Harad'}
+        for unit_id, faction in units.items():
+            self.page.locator(f'[data-filter="{faction}"]').click()
+            expect(self.page.locator(f'[data-art="{unit_id}"]')).to_be_visible()
+            self.assertEqual(self.page.locator(f'.art-card:visible:not([data-faction="{faction}"])').count(), 0)
+        self.assertEqual(self.page.locator('#qty-gondor-swords').input_value(), '1')
+        result = self.page.evaluate('''async ids => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const arts = ids.map(id => catalog.find(a => a.id === id));
+          const images = await Promise.all(arts.map(a => new Promise((resolve, reject) => {
+            const img = new Image(); img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width; canvas.height = img.height;
+              const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+              const pixels = ctx.getImageData(0, 0, img.width, img.height).data;
+              let clear = 0, solid = 0;
+              for (let i = 3; i < pixels.length; i += 4) {
+                if (pixels[i] === 0) clear++;
+                if (pixels[i] === 255) solid++;
+              }
+              resolve({clear, solid});
+            }; img.onerror = reject; img.src = a.path;
+          })));
+          const setup = {...defaultSetup(), riders: 2, nameplates: true};
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
+          const mounted = arts.find(a => a.kind === 'Mounted');
+          const spacing = [2, 4].map(riders => {
+            const s = makeStrip(mounted, {...setup, riders}); return [s.count, s.pitch];
+          });
+          return {images, total: layout.total, assets: assets.size, pdf: bytes.length, spacing,
+            pages: pdf.getPageCount(), expected: layout.pages.length,
+            strips: arts.map(a => {const s = makeStrip(a, setup);
+              return {kind: a.kind, base: [s.baseWidth, s.baseDepth], count: s.count,
+                backs: s.sections.filter(p => p.side === 'back').map(p => p.variant)};})};
+        }''', list(units))
+        self.assertEqual(result['total'], 4)
+        self.assertEqual(result['assets'], 8)
+        self.assertGreater(result['pdf'], 1000)
+        self.assertEqual(result['pages'], result['expected'])
+        self.assertEqual(result['spacing'], [[2, 20], [4, 10]])
+        for image in result['images']:
+            self.assertGreater(image['clear'], 0)
+            self.assertGreater(image['solid'], 0)
+        for strip in result['strips']:
+            self.assertEqual(strip['base'], [40, 20])
+            self.assertEqual(strip['count'], 2)
+            self.assertEqual(strip['backs'], ['mirror' if strip['kind'] == 'Mounted' else 'silhouette'] * 2)
+
     def test_goblin_faction_light_troops_load_and_export(self):
         self.page.locator('[data-filter="Goblins"]').click()
         self.assertEqual(self.page.locator('.art-card:visible').count(), 3)
@@ -591,7 +645,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_rohan_hero_square_base_and_export(self):
         self.page.locator('[data-filter="Rohan"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 8)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 9)
         result = self.page.evaluate("""async () => {
           const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
           const {catalog} = await import('./src/catalog.js');

@@ -4,6 +4,10 @@ export const eras = [
 ];
 
 export const catalog = [
+  {id: 'isengard-dunlending-javelinmen', name: 'Dunlending javelinmen', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Infantry', height: 13.5, file: 'dunlending-javelinmen.png', note: 'Light Foot · eight varied hillmen with javelins · loose rank · 40 × 20 mm'},
+  {id: 'mordor-trackers', name: 'Mordor trackers', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'mordor-trackers.png', note: 'Skirmish Foot · eight lightly equipped Orc bowmen · loose rank · 40 × 20 mm'},
+  {id: 'rohan-outriders', name: 'Rohan outriders', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Mounted', height: 20, file: 'rohan-outrider-profile.png', note: 'Light Cavalry · spear and small shield · mirrored horse profile · 40 × 20 mm'},
+  {id: 'harad-javelin-skirmishers', name: 'Haradrim javelin skirmishers', shortName: 'Haradrim skirmishers', era: 'middle-earth-third-age', faction: 'Harad', kind: 'Infantry', height: 13.5, file: 'harad-javelin-skirmishers.png', note: 'Skirmish Foot · eight varied javelinmen · loose rank · 40 × 20 mm'},
   {id: 'goblin-archers', name: 'Goblin archers', era: 'middle-earth-third-age', faction: 'Goblins', kind: 'Infantry', height: 13.5, file: 'goblin-archers.png', note: 'Light Foot · eight varied bowmen in a loose rank · 40 × 20 mm'},
   {id: 'goblin-spears', name: 'Goblin spearmen', era: 'middle-earth-third-age', faction: 'Goblins', kind: 'Infantry', height: 13.5, file: 'goblin-spearmen.png', note: 'Light Foot · eight irregular spearmen in a loose rank · 40 × 20 mm'},
   {id: 'goblin-warg-riders', name: 'Goblin light warg riders', era: 'middle-earth-third-age', faction: 'Goblins', kind: 'Mounted', height: 20, file: 'goblin-light-warg-rider-profile.png', note: 'Light Cavalry · lightly equipped rider · mirrored warg profile · 40 × 20 mm'},
@@ -29,7 +33,7 @@ export const catalog = [
   {id: 'gondor-spears', name: 'Gondor spearmen', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-spearmen-unit.png', note: 'Original textured style · eight spearmen'},
   {id: 'gondor-archers', name: 'Gondor archers', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-archers-clean.png', note: 'Clean style · eight foot archers'},
   {id: 'gondor-militia', name: 'Gondor militia', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-militia.png', note: 'Light Foot · eight irregular militia · mixed clothes and weapons · 40 × 20 mm'},
-  {id: 'gondor-rangers', name: 'Rangers of Gondor', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-rangers.png', note: 'Skirmish Foot · eight lightly equipped bowmen · 40 × 20 mm'},
+  {id: 'gondor-rangers', name: 'Rangers of Gondor', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Infantry', height: 13.5, file: 'gondor-rangers.png', note: 'Skirmish Foot · six varied bowmen in a loose formation · 40 × 20 mm'},
   {id: 'gondor-horse-archers', name: 'Gondor mounted archers', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Mounted', height: 20, file: 'gondor-mounted-archer-profile.png', note: 'Clean style · mirrored horse archer profiles'},
   {id: 'orc-archers', name: 'Orc archers', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Infantry', height: 13.5, file: 'orc-archers-clean.png', note: 'Clean style · eight foot archers'},
   {id: 'orc-warg-archers', name: 'Orc mounted archers', shortName: 'Orc warg archers', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Mounted', height: 20, file: 'orc-mounted-archer-profile.png', note: 'Clean style · mirrored warg archer profiles'},
