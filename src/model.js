@@ -90,13 +90,14 @@ export function makeStrip(art, setup, copy = 1) {
   const strip = {art, copy, name: art.name, baseWidth, baseDepth, width, height: y, bodyWidth: width, bodyHeight: y, count, span, panelHeight, pitch, sections, folds};
   if (setup.nameplates && setup.labelPlacement === 'attached') {
     strip.labelName = setup.copyNames?.[art.id]?.[copy - 1] || setup.names?.[art.id] || art.name;
-    // Mounted rear edges are along the side of the net. The full-width label
-    // attaches to the first end foot; slit the remaining shared edge free.
-    strip.labelFlap = mounted
-      ? {side: true, x: width, y: 0, width: 10, height: baseWidth, attachment: pitch / 2}
-      : {side: false, x: 0, y, width, height: 10, attachment: width};
+    strip.bodyY = mounted ? 0 : 10;
+    // Side tabs attach to every ground section, leaving figure panels free.
+    strip.wrapTabs = mounted
+      ? sections.filter(s => s.kind === 'ground').map(s => ({side: true, x: width, y: s.y, width: 10, height: s.height}))
+      : [{side: false, x: 0, y: 0, width, height: 10, edge: 'front'},
+         {side: false, x: 0, y: y + 10, width, height: 10, edge: 'back'}];
     if (mounted) strip.width += 10;
-    else strip.height += 10;
+    else strip.height += 20;
   }
   return strip;
 }
@@ -104,10 +105,15 @@ export function makeStrip(art, setup, copy = 1) {
 export function layoutSetup(setup) {
   setup = validateSetup(setup);
   const items = catalog.flatMap(art => Array.from({length: setup.quantities[art.id]}, (_, i) => makeStrip(art, setup, i + 1)));
-  const labels = setup.nameplates && setup.labelPlacement === 'separate' ? items.map(strip => ({
-    kind: 'nameplate', art: strip.art, copy: strip.copy,
-    name: setup.copyNames[strip.art.id]?.[strip.copy - 1] || setup.names[strip.art.id] || strip.art.name,
-    width: strip.baseWidth - 2, height: 4, sections: []
-  })) : [];
-  return {...pack([...items, ...labels], setup), setup, total: items.length, labelTotal: setup.nameplates ? items.length : 0};
+  const labels = setup.nameplates ? items.flatMap(strip => {
+    const name = setup.copyNames[strip.art.id]?.[strip.copy - 1] || setup.names[strip.art.id] || strip.art.name;
+    if (setup.labelPlacement === 'attached') {
+      if (strip.art.kind !== 'Mounted') return [];
+      return ['front', 'back'].map(edge => ({kind: 'nameplate', wrap: true, edge, art: strip.art, copy: strip.copy,
+        name, width: strip.baseWidth, height: 9, sections: []}));
+    }
+    return [{kind: 'nameplate', art: strip.art, copy: strip.copy, name, width: strip.baseWidth - 2, height: 4, sections: []}];
+  }) : [];
+  return {...pack([...items, ...labels], setup), setup, total: items.length,
+    labelTotal: setup.nameplates ? items.length * (setup.labelPlacement === 'attached' ? 2 : 1) : 0};
 }

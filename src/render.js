@@ -113,9 +113,9 @@ async function prepareLabelFont() {
   await labelFontPromise;
 }
 
-function fittedLabel(strip) {
+function fittedLabel(strip, maxPoints = 8) {
   if (!labelFont) throw Error('Nameplate font is not ready.');
-  const point = 72 / 25.4, maxSize = 8 / point, minSize = 6 / point;
+  const point = 72 / 25.4, maxSize = maxPoints / point, minSize = 6 / point;
   const naturalWidth = labelFont.widthOfTextAtSize(strip.name, maxSize * point) / point;
   const size = Math.min(maxSize, maxSize * (strip.width - 2) / Math.max(naturalWidth, .01));
   if (size < minSize) throw Error(`${strip.art.name} base ${strip.copy}: name is too long for a readable label. Shorten it (minimum 6 pt).`);
@@ -126,8 +126,8 @@ export async function prepareArtwork(layout) {
   if (layout.setup.nameplates) {
     await prepareLabelFont();
     for (const item of layout.pages.flat()) {
-      if (item.kind === 'nameplate') fittedLabel(item);
-      if (item.labelFlap) fittedLabel({art: item.art, copy: item.copy, name: item.labelName, width: item.baseWidth - 2});
+      if (item.kind === 'nameplate') fittedLabel(item, item.wrap ? 6 : 8);
+      if (item.wrapTabs && item.art.kind !== 'Mounted') fittedLabel({art: item.art, copy: item.copy, name: item.labelName, width: item.baseWidth}, 6);
     }
   }
   const jobs = new Map();
@@ -183,20 +183,29 @@ export function pageScene(layout, index) {
   text('Print at 100% / actual size. Cut solid outlines; fold dashed crests and dotted feet.', margin, margin + 6, 2);
   for (const strip of layout.pages[index]) {
     const {x, y, sections} = strip, w = strip.bodyWidth ?? strip.width;
-    text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? ' / label' : ''}`, x, strip.captionY, w === 20 ? 1.7 : 2);
+    text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? strip.wrap ? ' / ' + strip.edge + ' label' : ' / label' : ''}`, x, strip.captionY, w === 20 ? 1.7 : 2);
     if (strip.kind === 'nameplate') {
-      const {size, textWidth} = fittedLabel(strip);
+      const {size, textWidth} = fittedLabel(strip, strip.wrap ? 6 : 8);
       rect(x, y, w, strip.height, '#ffffff', '#59645c');
+      if (strip.wrap) {
+        rect(x, y, w, 3, setup.groundColor);
+        rect(x, y + 6, w, 3, setup.groundColor);
+        if (setup.guides) for (const offset of [3, 6]) {
+          line(x, y + offset, x + w, y + offset, '#ffffff', .35, [1.2, .8]);
+          line(x, y + offset, x + w, y + offset, '#8f6333', .15, [1.2, .8]);
+        }
+        rect(x, y, w, strip.height, null, '#59645c');
+      }
       text(strip.name, x + (w - textWidth) / 2, y + strip.height / 2 + size * .35, size, '#000000');
       continue;
     }
     for (const section of sections) {
-      const sy = y + section.y;
+      const sy = y + (strip.bodyY || 0) + section.y;
       if (section.kind === 'face' && setup.figureBackground === 'gradient') {
         ops.push({type: 'image', key: gradientKey(strip, section, setup), x, y: sy, w, h: section.height});
       } else rect(x, sy, w, section.height, section.kind === 'ground' ? setup.groundColor : setup.figureColor);
       if (setup.fakeShadows) for (const shadow of groundShadows(strip, section)) {
-        ops.push({type: 'image', key: shadowKey(strip, shadow), x, y: y + shadow.y, w, h: shadow.height});
+        ops.push({type: 'image', key: shadowKey(strip, shadow), x, y: y + (strip.bodyY || 0) + shadow.y, w, h: shadow.height});
       }
       if (section.kind === 'face' && section.variant !== 'blank') {
         ops.push({type: 'image', key: panelKey(strip, section.variant, setup.silhouetteColor), x, y: sy, w, h: section.height});
@@ -205,43 +214,44 @@ export function pageScene(layout, index) {
     if (setup.guides) for (const fold of strip.folds) {
       const mountain = fold.kind === 'mountain';
       // A white underlay keeps fine fold marks visible on dark setup colors.
-      line(x, y + fold.y, x + w, y + fold.y, '#ffffff', .35, mountain ? [1.2, .8] : [.3, .6]);
-      line(x, y + fold.y, x + w, y + fold.y, mountain ? '#8f6333' : '#517e94', .15, mountain ? [1.2, .8] : [.3, .6]);
+      line(x, y + (strip.bodyY || 0) + fold.y, x + w, y + (strip.bodyY || 0) + fold.y, '#ffffff', .35, mountain ? [1.2, .8] : [.3, .6]);
+      line(x, y + (strip.bodyY || 0) + fold.y, x + w, y + (strip.bodyY || 0) + fold.y, mountain ? '#8f6333' : '#517e94', .15, mountain ? [1.2, .8] : [.3, .6]);
     }
-    if (!strip.labelFlap) rect(x, y, w, strip.height, null, '#59645c');
+    if (!strip.wrapTabs) rect(x, y, w, strip.height, null, '#59645c');
     else {
-      const flap = strip.labelFlap, fx = x + flap.x, fy = y + flap.y;
-      rect(fx, fy, flap.width, flap.height, '#ffffff');
-      const {size, textWidth} = fittedLabel({art: strip.art, copy: strip.copy, name: strip.labelName, width: strip.baseWidth - 2});
-      if (flap.side) {
-        // Full label attaches only to the first foot; the solid shared edge is a slit.
-        line(x, y, fx + 10, y, '#59645c');
-        line(fx + 10, y, fx + 10, y + flap.height, '#59645c');
-        line(fx + 10, y + flap.height, fx, y + flap.height, '#59645c');
-        line(fx, y + flap.attachment, fx, y + strip.bodyHeight, '#59645c');
-        line(fx, y + strip.bodyHeight, x, y + strip.bodyHeight, '#59645c');
-        line(x, y + strip.bodyHeight, x, y, '#59645c');
-        text(strip.labelName, fx + 7.5 - size * .35, fy + (flap.height - textWidth) / 2, size, '#000000', 90);
-      } else {
+      const guide = (ax, ay, bx, by) => {
+        if (!setup.guides) return;
+        line(ax, ay, bx, by, '#ffffff', .35, [1.2, .8]);
+        line(ax, ay, bx, by, '#8f6333', .15, [1.2, .8]);
+      };
+      if (strip.art.kind === 'Mounted') {
         line(x, y, x + w, y, '#59645c');
-        line(x + w, y, x + w, y + strip.height, '#59645c');
-        line(x + w, y + strip.height, x, y + strip.height, '#59645c');
-        line(x, y + strip.height, x, y, '#59645c');
-        text(strip.labelName, fx + (w - textWidth) / 2, fy + 7.5 + size * .35, size, '#000000');
-      }
-      if (setup.guides) {
-        const guide = (ax, ay, bx, by, mountain) => {
-          const dash = mountain ? [1.2, .8] : [.3, .6];
-          line(ax, ay, bx, by, '#ffffff', .35, dash);
-          line(ax, ay, bx, by, mountain ? '#8f6333' : '#517e94', .15, dash);
-        };
-        if (flap.side) {
-          guide(fx, fy, fx, fy + flap.attachment, false);
-          guide(fx + 5, fy, fx + 5, fy + flap.height, true);
-        } else {
-          guide(fx, fy, fx + w, fy, false);
-          guide(fx, fy + 5, fx + w, fy + 5, true);
+        line(x, y, x, y + strip.height, '#59645c');
+        line(x, y + strip.height, x + w, y + strip.height, '#59645c');
+        for (const section of sections) if (section.kind === 'face')
+          line(x + w, y + section.y, x + w, y + section.y + section.height, '#59645c');
+        for (const tab of strip.wrapTabs) {
+          const tx = x + tab.x, ty = y + tab.y;
+          rect(tx, ty, tab.width, tab.height, setup.groundColor);
+          line(tx, ty, tx + 10, ty, '#59645c');
+          line(tx + 10, ty, tx + 10, ty + tab.height, '#59645c');
+          line(tx + 10, ty + tab.height, tx, ty + tab.height, '#59645c');
+          guide(tx, ty, tx, ty + tab.height);
+          guide(tx + 3, ty, tx + 3, ty + tab.height);
         }
+      } else {
+        for (const tab of strip.wrapTabs) {
+          const ty = y + tab.y, front = tab.edge === 'front';
+          rect(x, ty, w, 10, setup.groundColor);
+          const bandY = ty + (front ? 7 : 0);
+          rect(x, bandY, w, 3, '#ffffff');
+          const {size, textWidth} = fittedLabel({art: strip.art, copy: strip.copy, name: strip.labelName, width: w}, 6);
+          text(strip.labelName, x + w / 2 + (front ? textWidth / 2 : -textWidth / 2),
+            bandY + 1.5 + (front ? -1 : 1) * size * .35, size, '#000000', front ? 180 : 0);
+          guide(x, ty + (front ? 10 : 0), x + w, ty + (front ? 10 : 0));
+          guide(x, ty + (front ? 7 : 3), x + w, ty + (front ? 7 : 3));
+        }
+        rect(x, y, w, strip.height, null, '#59645c');
       }
     }
   }

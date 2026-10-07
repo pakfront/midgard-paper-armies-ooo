@@ -1,6 +1,6 @@
 # Print and base options plan
 
-Status: implemented. All 21 browser/PDF tests pass; combined print preview visually inspected. Physical label fold validation remains pending.
+Status: implemented. All 22 browser/PDF tests pass; revised wraparound preview inspected. A physical trial of the new tabs on a 3 mm base remains pending.
 
 ## 1. Default to US Letter
 
@@ -26,22 +26,21 @@ Status: implemented. All 21 browser/PDF tests pass; combined print preview visua
 - Extend validation and persistence for the mode and two colors; older setups remain solid.
 - Extend the shared scene/rendering pipeline so SVG preview and PDF use matching colors and direction. Choose a shared gradient representation compatible with the bundled PDF library; a reusable high-resolution background image is an option. Keep transparent artwork over the background and cache keys sensitive to any baked-in colors.
 
-## 4. Label integrated into a rear fold
+## 4. Wraparound base labels (revised after physical testing)
 
-- Add a label placement choice alongside the existing nameplate toggle: Separate (default) or Attached rear fold. Disabled nameplates produce neither kind of label.
-- Reuse unit names, individual base overrides, fallback artwork names, and existing readable-text validation.
-- Use a uniform 5 mm rear label upright for every unit type, independent of figure panel height, with a matching 5 mm return panel so it folds and glues back-to-back (10 mm of unfolded label material). Existing 6–8 pt single-line text should fit with vertical clearance; verify readability with a physical sample.
-- Attach the flap at the assembled rear edge of the base. For Foot and Monstrosities this can extend the terminal ground section. Cavalry folds run across the frontage, so its rear edge is along the side of the strip: use a full-frontage side flap anchored to the first end foot, with a slit freeing the rest of its shared edge from the figure strip. Include Heroes in the geometry review.
-- Keep the ground sections' assembled footprint unchanged. Add label panels and fold guides explicitly, orient the text to read correctly after folding, and avoid redundant separate labels in attached mode.
-- Extend packing to account for the complete flap bounds and provide cut outlines that follow the resulting shape. Reserve space so attached labels never overlap neighboring strips or captions.
-- Extend the shared scene, SVG preview, and PDF export to render label faces, outlines, and folds consistently. Update the fold diagram and assembly instructions with the attachment and folding sequence.
-- Extend validation and persistence; older setups retain their separate-nameplate behavior.
+- Replace the former attached upright labels while keeping `labelPlacement: 'attached'` compatible with saved setups.
+- Foot, foot Heroes, and Monstrosities have 10 mm tabs at both strip ends: 3 mm printed name bands at the front/rear base edges, plus 7 mm underneath for tape.
+- Cavalry and mounted Heroes have 10 mm side tabs attached to each ground section, leaving figure panels free. They print two separate front/back name wraps, each with a 3 mm name band and 3 mm top/underside flaps.
+- Edge labels use 6 pt text and preserve unit/copy names. Separate flat labels remain available.
+- Ground totals, base dimensions, artwork sizes, and shadows stay unchanged; packing includes every tab and label piece.
+- Fold guides show downward mountain folds at each 3 mm base edge and underside transition. Preview and PDF share the same net.
+- Update instructions, geometry tests, and PDF export checks. Physically test the revised wraps on a 3 mm thick base.
 
 ## Implementation order
 
 1. Add validated settings, backward-compatible defaults, and editor controls; implement Letter and square cavalry geometry.
 2. Add gradient rendering and persistence.
-3. Sketch the uniform 5 mm rear-flap net for both fold directions, then implement attached labels and packing.
+3. Implement wraparound nets for both fold directions and separate mounted front/back name wraps.
 4. Update README and run the relevant browser/PDF checks in `tests/test_workshop.py`, followed by the full existing suite.
 
 ## Acceptance checks
@@ -49,16 +48,18 @@ Status: implemented. All 21 browser/PDF tests pass; combined print preview visua
 - Fresh setups default to Letter; existing A4 setups round-trip unchanged.
 - Both cavalry sizes have the correct assembled dimensions, ground totals, rider counts, and non-overlapping page placements. Mounted and foot Heroes retain their single uprights and 20 × 20 mm bases.
 - Gradients run dark-to-light from feet to crest on both assembled faces, match in preview and PDF, and persist through save/load. Solid mode remains available.
-- Attached labels preserve the base footprint, fold at the actual rear edge, display the intended base name, and remain readable. Cover Foot, both cavalry sizes, Heroes, and fixed-height Monstrosities.
+- Wraparound tabs preserve the base footprint, cover the 3 mm base edges, provide 7 mm underneath for tape, and display front/rear names. Mounted name wraps have separate top and underside flaps. Cover Foot, both cavalry sizes, Heroes, and fixed-height Monstrosities.
 - Separate labels retain their 38 × 4 mm unit and 18 × 4 mm Hero sizes. Disabled labels print no label components.
 - Exercise combined options, multiple pages, both paper sizes/orientations, oversized-strip errors, long names, legacy JSON, browser reload, and mobile controls.
-- Confirm artwork loads and PDF export succeeds without clipped figures or weapons. Perform a physical cut-and-fold check of the attached flap before calling its geometry complete.
+- Confirm artwork loads and PDF export succeeds without clipped figures or weapons. Perform a physical cut-and-fold check of the wraparound tabs before calling its geometry complete.
 
 Validation command: `.venv/bin/python -m unittest discover -s tests -v` (use the README development setup if dependencies are missing).
 
 ## Validation result
 
-- `.venv/bin/python -m unittest discover -s tests -v`: 21 tests passed.
-- Combined square Cavalry, mounted Hero, Foot, and Giant preview inspected with gradients and attached labels.
+- `.venv/bin/python -m unittest discover -s tests -v`: 22 tests passed.
+- Combined square Cavalry, mounted Hero, Foot, and Giant preview inspected with gradients, shadows, wraparound tabs, and front/back mounted name strips.
 - Starter quantities and fold-diagram examples now use stable catalog IDs so artwork additions cannot displace them. Existing catalog-count assertions were brought up to date.
-- Physical cut-and-fold trial of the label flap remains outstanding.
+- Physical cut-and-fold trial of the revised wraparound tabs remains outstanding.
+
+Physical test sample: [output/wraparound-test.pdf](output/wraparound-test.pdf), US Letter; print at 100% / actual size.

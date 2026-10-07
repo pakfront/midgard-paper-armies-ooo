@@ -81,11 +81,12 @@ class WorkshopTests(unittest.TestCase):
             for(const [i,page] of layout.pages.entries()) {
               const ops=pageScene(layout,i);
               for(const s of page) {
+                if(s.kind==='nameplate')continue;
                 const shadowOps=ops.filter(o=>o.key?.startsWith('shadow:')&&o.x===s.x&&o.y>=s.y&&o.y<s.y+s.height);
                 const grounds=s.sections.filter(g=>g.kind==='ground');
                 const shapes=grounds.flatMap(g=>groundShadows(s,g));
                 strips.push({eligible:['Mounted','Infantry'].includes(s.art.kind),mounted:s.art.kind==='Mounted',count:s.count,shadows:shadowOps.length,
-                  within:shadowOps.every(o=>o.w===s.bodyWidth&&grounds.some(g=>o.y>=s.y+g.y&&o.y+o.h<=s.y+g.y+g.height)),
+                  within:shadowOps.every(o=>o.w===s.bodyWidth&&grounds.some(g=>o.y>=s.y+(s.bodyY||0)+g.y&&o.y+o.h<=s.y+(s.bodyY||0)+g.y+g.height)),
                   squashed:shadowOps.every(o=>o.h< s.panelHeight&&(s.art.kind==='Mounted'?o.h<=s.panelHeight*.8:o.h<=2.5)),
                   oneDirection:shapes.every(a=>a.flipped)&&groundShadows(s,grounds[0]).length===0,
                   fillsSpace:grounds.filter(g=>g.y>0).every(g=>groundShadows(s,g).every(a=>a.height>=g.height*.75))});
@@ -213,26 +214,40 @@ class WorkshopTests(unittest.TestCase):
               for(const b of page.slice(i+1))overlap ||= a.x<b.x+b.width&&b.x<a.x+a.width&&a.y-4<b.y+b.height&&b.y-4<a.y+a.height;
             }
             results.push({overlap,outside,pages:pdf.getPageCount(),expected:l.pages.length,
-              separate:l.pages.flat().some(x=>x.kind==='nameplate'),text:ops.filter(o=>o.type==='text').map(o=>o.value),
-              strips:l.pages.flat().map(x=>({base:[x.baseWidth,x.baseDepth],mounted:x.art.kind==='Mounted',hero:!!x.art.hero,
+              labels:l.pages.flat().filter(x=>x.kind==='nameplate').map(x=>({wrap:x.wrap,edge:x.edge,width:x.width,height:x.height,baseWidth:x.art.baseWidth||40})),named:ops.filter(o=>o.value==='First Guard').map(o=>({rotation:o.rotation,size:o.size})),text:ops.filter(o=>o.type==='text').map(o=>o.value),
+              strips:l.pages.flat().filter(x=>x.kind!=='nameplate').map(x=>({base:[x.baseWidth,x.baseDepth],mounted:x.art.kind==='Mounted',hero:!!x.art.hero,
                 ground:x.sections.filter(s=>s.kind==='ground').reduce((n,s)=>n+s.height,0),span:x.span,
-                bounds:[x.width-x.bodyWidth,x.height-x.bodyHeight],flap:x.labelFlap,
+                bounds:[x.width-x.bodyWidth,x.height-x.bodyHeight],tabs:x.wrapTabs,bodyY:x.bodyY,
                 imageWidths:ops.filter(o=>o.type==='image'&&o.x===x.x&&o.y>=x.y&&o.y<x.y+x.bodyHeight).map(o=>o.w)}))});
           }
           const off=layoutSetup({...defaultSetup(),labelPlacement:'attached'});
-          return {results,off:off.pages.flat().some(s=>s.labelFlap)};
+          return {results,off:off.pages.flat().some(s=>s.wrapTabs)};
         }''')
         self.assertFalse(result['off'])
         for layout in result['results']:
             self.assertFalse(layout['overlap'])
             self.assertFalse(layout['outside'])
-            self.assertFalse(layout['separate'])
+            self.assertEqual(len(layout['labels']), 2 * sum(s['mounted'] for s in layout['strips']))
+            for label in layout['labels']:
+                self.assertTrue(label['wrap'])
+                self.assertIn(label['edge'], ['front', 'back'])
+                self.assertEqual(label['height'], 9)
+                self.assertEqual(label['width'], label['baseWidth'])
+            self.assertEqual(sorted(n['rotation'] for n in layout['named']), [0, 180])
+            self.assertTrue(all(abs(n['size'] * 72 / 25.4 - 6) < 1e-6 for n in layout['named']))
             self.assertEqual(layout['pages'], layout['expected'])
             self.assertIn('First Guard', layout['text'])
             for strip in layout['strips']:
                 self.assertAlmostEqual(strip['ground'], strip['span'])
-                self.assertEqual(strip['bounds'], [10, 0] if strip['mounted'] else [0, 10])
-                self.assertEqual(strip['flap']['width'] if strip['mounted'] else strip['flap']['height'], 10)
+                self.assertEqual(strip['bounds'], [10, 0] if strip['mounted'] else [0, 20])
+                for tab in strip['tabs']:
+                    self.assertEqual(tab['width'] if strip['mounted'] else tab['height'], 10)
+                if strip['mounted']:
+                    self.assertAlmostEqual(sum(t['height'] for t in strip['tabs']), strip['span'])
+                    self.assertEqual(strip['bodyY'], 0)
+                else:
+                    self.assertEqual([t['edge'] for t in strip['tabs']], ['front', 'back'])
+                    self.assertEqual(strip['bodyY'], 10)
                 if strip['hero']:
                     self.assertEqual(strip['base'], [20, 20])
 
