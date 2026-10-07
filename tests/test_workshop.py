@@ -350,6 +350,35 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['assets'], 4)
         self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
 
+    def test_gondor_light_units_load_and_export(self):
+        self.page.locator('[data-filter="Gondor"]').click()
+        for unit_id in ['gondor-militia', 'gondor-rangers']:
+            expect(self.page.locator(f'[data-art="{unit_id}"]')).to_be_visible()
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const arts = catalog.filter(a => ['gondor-militia', 'gondor-rangers'].includes(a.id));
+          const loaded = await Promise.all(arts.map(a => new Promise((resolve, reject) => {
+            const img = new Image(); img.onload = () => resolve(img.naturalWidth > 0);
+            img.onerror = reject; img.src = a.path;
+          })));
+          const setup = defaultSetup();
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          const bytes = await createPDF(layout, assets);
+          const pdf = await PDFLib.PDFDocument.load(bytes);
+          return {loaded, assets: assets.size, pdf: bytes.length, pages: pdf.getPageCount(),
+            expected: layout.pages.length, strips: arts.map(a => {
+              const s = makeStrip(a, setup); return [s.baseWidth, s.baseDepth, s.count, s.panelHeight];
+            })};
+        }''')
+        self.assertEqual(result['loaded'], [True, True])
+        self.assertEqual(result['assets'], 4)
+        self.assertGreater(result['pdf'], 1000)
+        self.assertEqual(result['pages'], result['expected'])
+        self.assertEqual(result['strips'], [[40, 20, 2, 14.5]] * 2)
+
     def test_middle_earth_expansion_artwork_and_foot_heroes_export(self):
         ids = ['isengard-warg-riders', 'rohan-foot-captain', 'mordor-spearmen',
                'mordor-morannon', 'mordor-banner-bearer', 'mordor-catapult',
