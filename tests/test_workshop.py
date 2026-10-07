@@ -51,6 +51,50 @@ class WorkshopTests(unittest.TestCase):
     def ready(self):
         expect(self.page.locator('#download')).to_be_enabled(timeout=30000)
 
+    def test_packing_reuses_gaps_and_preserves_spacing_and_captions(self):
+        result = self.page.evaluate('''async () => {
+          const {pack}=await import('./src/packing.js');
+          const {defaultSetup,layoutSetup}=await import('./src/model.js');
+          // The old row packer needed two sheets: two short pieces can instead
+          // share a column beside this tall piece.
+          const example=pack([{name:'Tall',width:60,height:200},
+            {name:'Short A',width:120,height:90},{name:'Short B',width:120,height:90}]);
+          const mixed=layoutSetup({...defaultSetup(),nameplates:true,cavalryBaseDepth:40,
+            quantities:{'gondor-horse':8,'gondor-swords':12,'orc-troll':4,'rohan-eowyn':4}});
+          let seed=731;
+          const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+          const layouts=[];
+          for(const paper of ['letter','a4'])for(const orientation of ['portrait','landscape'])
+            for(const [margin,gap] of [[5,2],[10,4],[25,10]]) {
+              const items=Array.from({length:60},(_,id)=>({id,name:'Piece '+id,
+                width:20+Math.floor(random()*60),height:4+Math.floor(random()*100)}));
+              const settings={paper,orientation,margin,gap},l=pack(items,settings);
+              layouts.push({width:l.width,height:l.height,margin,gap,
+                deterministic:JSON.stringify(l)===JSON.stringify(pack(items,settings)),
+                pages:l.pages.map(p=>p.map(a=>({id:a.id,x:a.x,y:a.y,w:a.width,h:a.height,captionY:a.captionY})))});
+            }
+          return {example:example.pages.length,mixed:mixed.pages.length,layouts,empty:pack([]).pages.length};
+        }''')
+        self.assertEqual(result['example'], 1)
+        self.assertLessEqual(result['mixed'], 4)  # Previously five Letter sheets.
+        self.assertEqual(result['empty'], 0)
+        for layout in result['layouts']:
+            self.assertTrue(layout['deterministic'])
+            self.assertEqual(sorted(a['id'] for p in layout['pages'] for a in p), list(range(60)))
+            for page in layout['pages']:
+                for i, a in enumerate(page):
+                    self.assertGreaterEqual(a['x'], layout['margin'] - 1e-6)
+                    self.assertGreaterEqual(a['y'] - 4, layout['margin'] + 9 - 1e-6)
+                    self.assertLessEqual(a['x'] + a['w'], layout['width'] - layout['margin'] + 1e-6)
+                    self.assertLessEqual(a['y'] + a['h'], layout['height'] - layout['margin'] - 9 + 1e-6)
+                    self.assertAlmostEqual(a['captionY'], a['y'] - 1.5)
+                    for b in page[i + 1:]:
+                        separated = (a['x'] + a['w'] + layout['gap'] <= b['x'] + 1e-6 or
+                                     b['x'] + b['w'] + layout['gap'] <= a['x'] + 1e-6 or
+                                     a['y'] + a['h'] + layout['gap'] <= b['y'] - 4 + 1e-6 or
+                                     b['y'] + b['h'] + layout['gap'] <= a['y'] - 4 + 1e-6)
+                        self.assertTrue(separated)
+
     def test_fake_ground_shadows_profiles_alpha_geometry_pdf_and_storage(self):
         expect(self.page.locator('#fake-shadows')).not_to_be_checked()
         self.page.locator('#fake-shadows').check()
@@ -82,7 +126,7 @@ class WorkshopTests(unittest.TestCase):
               const ops=pageScene(layout,i);
               for(const s of page) {
                 if(s.kind==='nameplate')continue;
-                const shadowOps=ops.filter(o=>o.key?.startsWith('shadow:')&&o.x===s.x&&o.y>=s.y&&o.y<s.y+s.height);
+                const shadowOps=ops.filter(o=>o.key?.startsWith('shadow:')&&o.x===s.x+(s.bodyX||0)&&o.y>=s.y&&o.y<s.y+s.height);
                 const grounds=s.sections.filter(g=>g.kind==='ground');
                 const shapes=grounds.flatMap(g=>groundShadows(s,g));
                 strips.push({eligible:['Mounted','Infantry'].includes(s.art.kind),mounted:s.art.kind==='Mounted',count:s.count,shadows:shadowOps.length,
@@ -217,7 +261,7 @@ class WorkshopTests(unittest.TestCase):
               labels:l.pages.flat().filter(x=>x.kind==='nameplate').map(x=>({wrap:x.wrap,edge:x.edge,width:x.width,height:x.height,baseWidth:x.art.baseWidth||40})),named:ops.filter(o=>o.value==='First Guard').map(o=>({rotation:o.rotation,size:o.size})),text:ops.filter(o=>o.type==='text').map(o=>o.value),
               strips:l.pages.flat().filter(x=>x.kind!=='nameplate').map(x=>({base:[x.baseWidth,x.baseDepth],mounted:x.art.kind==='Mounted',hero:!!x.art.hero,
                 ground:x.sections.filter(s=>s.kind==='ground').reduce((n,s)=>n+s.height,0),span:x.span,
-                bounds:[x.width-x.bodyWidth,x.height-x.bodyHeight],tabs:x.wrapTabs,bodyY:x.bodyY,
+                bounds:[x.width-x.bodyWidth,x.height-x.bodyHeight],tabs:x.wrapTabs,bodyX:x.bodyX,bodyY:x.bodyY,
                 imageWidths:ops.filter(o=>o.type==='image'&&o.x===x.x&&o.y>=x.y&&o.y<x.y+x.bodyHeight).map(o=>o.w)}))});
           }
           const off=layoutSetup({...defaultSetup(),labelPlacement:'attached'});
@@ -239,12 +283,17 @@ class WorkshopTests(unittest.TestCase):
             self.assertIn('First Guard', layout['text'])
             for strip in layout['strips']:
                 self.assertAlmostEqual(strip['ground'], strip['span'])
-                self.assertEqual(strip['bounds'], [10, 0] if strip['mounted'] else [0, 20])
+                self.assertEqual(strip['bounds'], [20, 0] if strip['mounted'] else [0, 20])
                 for tab in strip['tabs']:
                     self.assertEqual(tab['width'] if strip['mounted'] else tab['height'], 10)
                 if strip['mounted']:
-                    self.assertAlmostEqual(sum(t['height'] for t in strip['tabs']), strip['span'])
+                    self.assertAlmostEqual(sum(t['height'] for t in strip['tabs']), 2 * strip['span'])
                     self.assertEqual(strip['bodyY'], 0)
+                    self.assertEqual(strip['bodyX'], 10)
+                    for edge in ['front', 'rear']:
+                        tabs = [t for t in strip['tabs'] if t['edge'] == edge]
+                        self.assertAlmostEqual(sum(t['height'] for t in tabs), strip['span'])
+                        self.assertTrue(all(t['x'] == (0 if edge == 'front' else strip['base'][1] + 10) for t in tabs))
                 else:
                     self.assertEqual([t['edge'] for t in strip['tabs']], ['front', 'back'])
                     self.assertEqual(strip['bodyY'], 10)

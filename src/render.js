@@ -182,8 +182,8 @@ export function pageScene(layout, index) {
   text(`PAPER ARMY STANDEES / units 40 x 20 mm; cavalry 40 x ${setup.cavalryBaseDepth} mm; heroes 20 x 20 mm`, margin, margin + 2, 2.7);
   text('Print at 100% / actual size. Cut solid outlines; fold dashed crests and dotted feet.', margin, margin + 6, 2);
   for (const strip of layout.pages[index]) {
-    const {x, y, sections} = strip, w = strip.bodyWidth ?? strip.width;
-    text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? strip.wrap ? ' / ' + strip.edge + ' label' : ' / label' : ''}`, x, strip.captionY, w === 20 ? 1.7 : 2);
+    const {x: netX, y, sections} = strip, x = netX + (strip.bodyX || 0), w = strip.bodyWidth ?? strip.width;
+    text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? strip.wrap ? ' / ' + strip.edge + ' label' : ' / label' : ''}`, netX, strip.captionY, w === 20 ? 1.7 : 2);
     if (strip.kind === 'nameplate') {
       const {size, textWidth} = fittedLabel(strip, strip.wrap ? 6 : 8);
       rect(x, y, w, strip.height, '#ffffff', '#59645c');
@@ -226,18 +226,19 @@ export function pageScene(layout, index) {
       };
       if (strip.art.kind === 'Mounted') {
         line(x, y, x + w, y, '#59645c');
-        line(x, y, x, y + strip.height, '#59645c');
         line(x, y + strip.height, x + w, y + strip.height, '#59645c');
-        for (const section of sections) if (section.kind === 'face')
+        for (const section of sections) if (section.kind === 'face') {
+          line(x, y + section.y, x, y + section.y + section.height, '#59645c');
           line(x + w, y + section.y, x + w, y + section.y + section.height, '#59645c');
+        }
         for (const tab of strip.wrapTabs) {
-          const tx = x + tab.x, ty = y + tab.y;
+          const tx = netX + tab.x, ty = y + tab.y, front = tab.edge === 'front';
           rect(tx, ty, tab.width, tab.height, setup.groundColor);
           line(tx, ty, tx + 10, ty, '#59645c');
-          line(tx + 10, ty, tx + 10, ty + tab.height, '#59645c');
+          line(tx + (front ? 0 : 10), ty, tx + (front ? 0 : 10), ty + tab.height, '#59645c');
           line(tx + 10, ty + tab.height, tx, ty + tab.height, '#59645c');
-          guide(tx, ty, tx, ty + tab.height);
-          guide(tx + 3, ty, tx + 3, ty + tab.height);
+          guide(tx + (front ? 10 : 0), ty, tx + (front ? 10 : 0), ty + tab.height);
+          guide(tx + (front ? 7 : 3), ty, tx + (front ? 7 : 3), ty + tab.height);
         }
       } else {
         for (const tab of strip.wrapTabs) {

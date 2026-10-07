@@ -1,6 +1,6 @@
 # Print and base options plan
 
-Status: implemented. All 22 browser/PDF tests pass; revised wraparound preview inspected. A physical trial of the new tabs on a 3 mm base remains pending.
+Status: implemented. All 23 browser/PDF tests pass; revised wraparound preview inspected. A physical trial of the new tabs on a 3 mm base remains pending.
 
 ## 1. Default to US Letter
 
@@ -30,7 +30,7 @@ Status: implemented. All 22 browser/PDF tests pass; revised wraparound preview i
 
 - Replace the former attached upright labels while keeping `labelPlacement: 'attached'` compatible with saved setups.
 - Foot, foot Heroes, and Monstrosities have 10 mm tabs at both strip ends: 3 mm printed name bands at the front/rear base edges, plus 7 mm underneath for tape.
-- Cavalry and mounted Heroes have 10 mm side tabs attached to each ground section, leaving figure panels free. They print two separate front/back name wraps, each with a 3 mm name band and 3 mm top/underside flaps.
+- Cavalry and mounted Heroes have 10 mm front and rear side tabs attached to each ground section, leaving figure panels free. They print two separate front/back name wraps, each with a 3 mm name band and 3 mm top/underside flaps.
 - Edge labels use 6 pt text and preserve unit/copy names. Separate flat labels remain available.
 - Ground totals, base dimensions, artwork sizes, and shadows stay unchanged; packing includes every tab and label piece.
 - Fold guides show downward mountain folds at each 3 mm base edge and underside transition. Preview and PDF share the same net.
@@ -57,7 +57,7 @@ Validation command: `.venv/bin/python -m unittest discover -s tests -v` (use the
 
 ## Validation result
 
-- `.venv/bin/python -m unittest discover -s tests -v`: 22 tests passed.
+- `.venv/bin/python -m unittest discover -s tests -v`: 23 tests passed.
 - Combined square Cavalry, mounted Hero, Foot, and Giant preview inspected with gradients, shadows, wraparound tabs, and front/back mounted name strips.
 - Starter quantities and fold-diagram examples now use stable catalog IDs so artwork additions cannot displace them. Existing catalog-count assertions were brought up to date.
 - Physical cut-and-fold trial of the revised wraparound tabs remains outstanding.

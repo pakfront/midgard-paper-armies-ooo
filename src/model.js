@@ -91,12 +91,15 @@ export function makeStrip(art, setup, copy = 1) {
   if (setup.nameplates && setup.labelPlacement === 'attached') {
     strip.labelName = setup.copyNames?.[art.id]?.[copy - 1] || setup.names?.[art.id] || art.name;
     strip.bodyY = mounted ? 0 : 10;
+    strip.bodyX = mounted ? 10 : 0;
     // Side tabs attach to every ground section, leaving figure panels free.
     strip.wrapTabs = mounted
-      ? sections.filter(s => s.kind === 'ground').map(s => ({side: true, x: width, y: s.y, width: 10, height: s.height}))
+      ? sections.filter(s => s.kind === 'ground').flatMap(s => [
+          {side: true, edge: 'front', x: 0, y: s.y, width: 10, height: s.height},
+          {side: true, edge: 'rear', x: width + 10, y: s.y, width: 10, height: s.height}])
       : [{side: false, x: 0, y: 0, width, height: 10, edge: 'front'},
          {side: false, x: 0, y: y + 10, width, height: 10, edge: 'back'}];
-    if (mounted) strip.width += 10;
+    if (mounted) strip.width += 20;
     else strip.height += 20;
   }
   return strip;
