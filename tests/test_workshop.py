@@ -214,6 +214,67 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['legacy']['figureBackground'], 'solid')
         self.assertEqual(result['legacy']['labelPlacement'], 'separate')
 
+    def test_per_unit_battle_roles_formations_persistence_and_pdf(self):
+        expect(self.page.locator('#ranks')).to_have_value('2')
+        expect(self.page.locator('#skirmisher-ranks')).to_have_value('1')
+        expect(self.page.locator('#riders')).to_have_value('4')
+        expect(self.page.locator('#light-riders')).to_have_value('3')
+        self.assertEqual(self.page.locator('#type-rohan-eowyn').count(), 0)
+        self.assertEqual(self.page.locator('#type-orc-troll').count(), 0)
+        self.page.locator('#type-gondor-swords').select_option('Skirmishers')
+        self.page.locator('#type-gondor-horse').select_option('Light Riders')
+        self.page.locator('#skirmisher-ranks').select_option('2')
+        self.page.locator('#light-riders').select_option('2')
+        self.ready()
+        with self.page.expect_download() as saved:
+            self.page.locator('#save').click()
+        payload = Path(saved.value.path()).read_bytes()
+        self.page.locator('#type-gondor-swords').select_option('Warriors')
+        self.page.locator('#type-gondor-horse').select_option('Heavy Riders')
+        self.page.locator('#load-file').set_input_files({'name': 'roles.json', 'mimeType': 'application/json', 'buffer': payload})
+        self.ready()
+        self.page.reload()
+        self.ready()
+        expect(self.page.locator('#type-gondor-swords')).to_have_value('Skirmishers')
+        expect(self.page.locator('#type-gondor-horse')).to_have_value('Light Riders')
+        expect(self.page.locator('#skirmisher-ranks')).to_have_value('2')
+        expect(self.page.locator('#light-riders')).to_have_value('2')
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, validateSetup, makeStrip, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const setup = defaultSetup();
+          Object.assign(setup.unitTypes, {'gondor-swords':'Warriors', 'gondor-rangers':'Skirmishers',
+            'gondor-horse':'Heavy Riders', 'rohan-outriders':'Light Riders'});
+          const ids = ['gondor-swords','gondor-rangers','gondor-horse','rohan-outriders','rohan-eowyn','orc-troll'];
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, ids.includes(a.id) ? 1 : 0]));
+          const geometry = s => ids.map(id => {const strip=makeStrip(catalog.find(a=>a.id===id),s);
+            return [strip.unitType,strip.count,strip.pitch,strip.sections.filter(p=>p.kind==='ground').reduce((n,p)=>n+p.height,0)];});
+          const defaults = geometry(setup);
+          const changed = geometry({...setup, ranks:3, skirmisherRanks:2, riders:2, lightRiders:4});
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          const pdf = await PDFLib.PDFDocument.load(await createPDF(layout,assets));
+          const legacy = {...setup, ranks:3, riders:2};
+          delete legacy.unitTypes; delete legacy.skirmisherRanks; delete legacy.lightRiders;
+          const restored = validateSetup(legacy);
+          const rejected = [];
+          for (const patch of [{unitTypes:[]},{unitTypes:{'gondor-swords':'Light Riders'}},
+            {unitTypes:{'gondor-horse':'Skirmishers'}},{skirmisherRanks:0},{lightRiders:5}]) {
+            try {validateSetup({...setup,...patch});rejected.push(false);} catch {rejected.push(true);}
+          }
+          return {defaults,changed,legacy:geometry(restored),skirmishers:restored.skirmisherRanks,
+            light:restored.lightRiders,rejected,pages:pdf.getPageCount(),expected:layout.pages.length};
+        }''')
+        self.assertEqual([s[1] for s in result['defaults']], [2, 1, 4, 3, 1, 1])
+        self.assertEqual([s[1] for s in result['changed']], [3, 2, 2, 4, 1, 1])
+        self.assertEqual([s[1] for s in result['legacy']], [3, 3, 2, 2, 1, 1])
+        self.assertEqual([s[3] for s in result['defaults']], [20, 20, 40, 40, 20, 20])
+        self.assertEqual(result['defaults'][1][2], 20)
+        self.assertAlmostEqual(result['defaults'][3][2], 40 / 3)
+        self.assertEqual([result['skirmishers'], result['light']], [1, 3])
+        self.assertTrue(all(result['rejected']))
+        self.assertEqual(result['pages'], result['expected'])
+
     def test_optional_cavalry_and_monstrosity_depth_geometry_and_pdf(self):
         result = self.page.evaluate('''async () => {
           const {catalog} = await import('./src/catalog.js');

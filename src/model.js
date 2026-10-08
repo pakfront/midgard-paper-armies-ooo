@@ -1,8 +1,15 @@
 import {catalog} from './catalog.js';
 import {pack} from './packing.js';
 
+export function unitTypeOptions(art) {
+  if (art.hero || art.kind === 'Monster') return [];
+  return art.kind === 'Mounted' ? ['Heavy Riders', 'Light Riders'] : ['Warriors', 'Skirmishers'];
+}
+
 export function defaultSetup() {
-  return {version: 1, nameplates: false, names: {}, copyNames: {}, ranks: 2, riders: 4, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
+  return {version: 1, nameplates: false, names: {}, copyNames: {},
+    unitTypes: Object.fromEntries(catalog.filter(a => unitTypeOptions(a).length).map(a => [a.id, unitTypeOptions(a)[0]])),
+    ranks: 2, skirmisherRanks: 1, riders: 4, lightRiders: 3, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
     cavalryBaseDepth: 20, monstrosityBaseDepth: 20, fakeShadows: false, figureBackground: 'solid', gradientBottom: '#456b94', gradientTop: '#eef7ff', labelPlacement: 'separate',
     groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'letter', orientation: 'portrait', margin: 10, gap: 4, guides: true,
     quantities: Object.fromEntries(catalog.map(art => [art.id, ['gondor-swords', 'gondor-horse', 'orc-axes', 'orc-wargs'].includes(art.id) ? 1 : 0]))};
@@ -17,6 +24,17 @@ export function validateSetup(input) {
     result[key] = value;
   };
   number('ranks', 1, 4, true); number('riders', 2, 4, true);
+  if (input.skirmisherRanks !== undefined) number('skirmisherRanks', 1, 4, true);
+  if (input.lightRiders !== undefined) number('lightRiders', 2, 4, true);
+  const unitTypes = input.unitTypes ?? {};
+  if (typeof unitTypes !== 'object' || Array.isArray(unitTypes) || input.unitTypes === null) throw Error('Invalid unit types.');
+  for (const art of catalog) {
+    const options = unitTypeOptions(art);
+    if (!options.length) continue;
+    const type = unitTypes[art.id] ?? options[0];
+    if (!options.includes(type)) throw Error(`${art.name}: invalid unit type.`);
+    result.unitTypes[art.id] = type;
+  }
   number('infantryHeight', 10, 30); number('mountedHeight', 15, 30);
   number('margin', 5, 25); number('gap', 2, 10);
   for (const [key, values] of Object.entries({cavalryBaseDepth: [20, 30, 40], monstrosityBaseDepth: [20, 30, 40], figureBackground: ['solid', 'gradient'], labelPlacement: ['separate', 'attached']})) {
@@ -76,7 +94,11 @@ export function makeStrip(art, setup, copy = 1) {
     : mounted ? (setup.cavalryBaseDepth ?? 20)
     : art.kind === 'Monster' ? (setup.monstrosityBaseDepth ?? 20) : (art.baseDepth ?? 20);
   const width = mounted ? baseDepth : baseWidth, span = mounted ? baseWidth : baseDepth;
-  const count = art.uprightCount ?? (art.hero ? 1 : mounted ? setup.riders : setup.ranks);
+  const unitType = art.hero ? 'Hero' : art.kind === 'Monster' ? 'Monstrosities'
+    : setup.unitTypes?.[art.id] ?? unitTypeOptions(art)[0];
+  const count = art.uprightCount ?? (art.hero ? 1 : mounted
+    ? unitType === 'Light Riders' ? (setup.lightRiders ?? 3) : setup.riders
+    : unitType === 'Skirmishers' ? (setup.skirmisherRanks ?? 1) : setup.ranks);
   const panelHeight = art.panelHeight ?? (mounted ? setup.mountedHeight : setup.infantryHeight);
   const pitch = span / count, sections = [], folds = [];
   let y = 0;
@@ -90,7 +112,7 @@ export function makeStrip(art, setup, copy = 1) {
     folds.push({y, kind: 'valley'});
     add('ground', rank === count - 1 ? pitch / 2 : pitch);
   }
-  const strip = {art, copy, name: art.name, baseWidth, baseDepth, width, height: y, bodyWidth: width, bodyHeight: y, count, span, panelHeight, pitch, sections, folds};
+  const strip = {art, copy, name: art.name, unitType, baseWidth, baseDepth, width, height: y, bodyWidth: width, bodyHeight: y, count, span, panelHeight, pitch, sections, folds};
   if (setup.nameplates && setup.labelPlacement === 'attached') {
     strip.labelName = setup.copyNames?.[art.id]?.[copy - 1] || setup.names?.[art.id] || art.name;
     strip.bodyY = mounted ? 0 : 10;

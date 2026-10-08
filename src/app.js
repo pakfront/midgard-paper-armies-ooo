@@ -1,11 +1,11 @@
 import {catalog, eras} from './catalog.js';
-import {defaultSetup, validateSetup, layoutSetup, makeStrip} from './model.js';
+import {defaultSetup, validateSetup, layoutSetup, makeStrip, unitTypeOptions} from './model.js';
 import {prepareArtwork, previewSVG, createPDF} from './render.js';
 
 const $ = id => document.getElementById(id), storageKey = 'uprights.setup.v1';
-const fields = {fakeShadows: 'fake-shadows', cavalryBaseDepth: 'cavalry-base-depth', monstrosityBaseDepth: 'monstrosity-base-depth', figureBackground: 'figure-background', gradientBottom: 'gradient-bottom', gradientTop: 'gradient-top', labelPlacement: 'label-placement', ranks: 'ranks', riders: 'riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
+const fields = {fakeShadows: 'fake-shadows', cavalryBaseDepth: 'cavalry-base-depth', monstrosityBaseDepth: 'monstrosity-base-depth', figureBackground: 'figure-background', gradientBottom: 'gradient-bottom', gradientTop: 'gradient-top', labelPlacement: 'label-placement', ranks: 'ranks', skirmisherRanks: 'skirmisher-ranks', riders: 'riders', lightRiders: 'light-riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
   groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides', nameplates: 'nameplates'};
-const numeric = new Set(['cavalryBaseDepth', 'monstrosityBaseDepth', 'ranks', 'riders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
+const numeric = new Set(['cavalryBaseDepth', 'monstrosityBaseDepth', 'ranks', 'skirmisherRanks', 'riders', 'lightRiders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
 const boolean = new Set(['guides', 'nameplates', 'fakeShadows']);
 let setup = defaultSetup(), currentLayout = null, currentAssets = null, pageIndex = 0, revision = 0, timer, exporting = false;
 
@@ -24,6 +24,14 @@ for (const art of catalog) {
     const input = card.querySelector('input'); input.value = Math.max(0, Math.min(50, (Number(input.value) || 0) + Number(button.dataset.delta))); requestRender();
   });
   card.querySelector('input').addEventListener('input', requestRender);
+  const options = unitTypeOptions(art);
+  if (options.length) {
+    const label = document.createElement('label'); label.textContent = 'Unit type';
+    const select = document.createElement('select'); select.id = `type-${art.id}`;
+    for (const type of options) select.add(new Option(type, type));
+    select.addEventListener('input', requestRender); label.append(select);
+    card.querySelector('.card-body').append(label);
+  }
   const naming = document.createElement('div'); naming.className = 'unit-names';
   const label = document.createElement('label'); label.textContent = 'Unit name';
   const input = document.createElement('input'); input.id = `name-${art.id}`; input.type = 'text'; input.maxLength = 80;
@@ -38,6 +46,7 @@ function writeControls() {
   for (const [key, id] of Object.entries(fields)) { if (boolean.has(key)) $(id).checked = setup[key]; else $(id).value = setup[key]; }
   for (const art of catalog) {
     $(`qty-${art.id}`).value = setup.quantities[art.id];
+    if (unitTypeOptions(art).length) $(`type-${art.id}`).value = setup.unitTypes[art.id];
     $(`name-${art.id}`).value = setup.names[art.id] || '';
     $(`copy-names-${art.id}`).replaceChildren();
   }
@@ -59,10 +68,11 @@ function syncCopyControls() {
   }
 }
 function readControls() {
-  const value = {version: 1, quantities: {}, names: {}, copyNames: {}};
+  const value = {version: 1, quantities: {}, names: {}, copyNames: {}, unitTypes: {}};
   for (const [key, id] of Object.entries(fields)) value[key] = boolean.has(key) ? $(id).checked : numeric.has(key) ? ($(id).value === '' ? NaN : Number($(id).value)) : $(id).value;
   for (const art of catalog) {
     const input = $(`qty-${art.id}`); value.quantities[art.id] = input.value === '' ? NaN : Number(input.value);
+    if (unitTypeOptions(art).length) value.unitTypes[art.id] = $(`type-${art.id}`).value;
     value.names[art.id] = $(`name-${art.id}`).value;
     const copies = [...(setup.copyNames[art.id] || [])];
     for (const [i, input] of [...$(`copy-names-${art.id}`).querySelectorAll('input')].entries()) copies[i] = input.value;
@@ -88,7 +98,7 @@ function diagram() {
   const svg = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 245" role="img" aria-label="Infantry folds parallel to the 40 millimetre frontage; cavalry folds parallel to the selected base depth. Flat feet between doubled upright panels."><g font-family="system-ui,sans-serif" fill="#344035">`];
   for (const [i, strip] of [infantry, cavalry].entries()) {
     const left = 25 + i * 215, top = 28, depth = strip.baseDepth * 3.5;
-    svg.push(`<text x="${left}" y="14" font-size="10" font-weight="600">${i ? 'CAVALRY' : 'INFANTRY'} · top view</text><rect x="${left}" y="${top}" width="140" height="${depth}" rx="2" fill="${ground}" stroke="#6c7767"/>`);
+    svg.push(`<text x="${left}" y="14" font-size="10" font-weight="600">${strip.unitType.toUpperCase()} · top view</text><rect x="${left}" y="${top}" width="140" height="${depth}" rx="2" fill="${ground}" stroke="#6c7767"/>`);
     for (let j = 0; j < strip.count; j++) {
       const t = (j + .5) / strip.count;
       const x1 = i ? left + 140 * t : left, y1 = i ? top : top + depth * t;
@@ -99,7 +109,7 @@ function diagram() {
   }
   svg.push('<text x="25" y="206" font-size="9">Flat feet + doubled upright panels (edge view)</text><path d="M25 233 H60 V213 H63 V233 H108 V213 H111 V233 H150" fill="none" stroke="#294d3d" stroke-width="2"/><line x1="25" y1="236" x2="150" y2="236" stroke="#9caa7c" stroke-width="3"/><text x="180" y="230" font-size="9">Fold at the crest; glue faces back-to-back.</text></g></svg>');
   $('fold-diagram').innerHTML = svg.join('');
-  $('fold-description').textContent = `Infantry: ${infantry.width} × ${+infantry.height.toFixed(2)} mm unfolded, ${+infantry.pitch.toFixed(2)} mm between ranks. Cavalry: ${cavalry.width} × ${+cavalry.height.toFixed(2)} mm unfolded, ${+cavalry.pitch.toFixed(2)} mm between riders. Flat feet total 20 mm for infantry and 40 mm for cavalry.${setup.nameplates && setup.labelPlacement === 'attached' ? ' Wraparound tabs add 10 mm at both infantry ends, or 10 mm on both sides of each cavalry ground section. Fold 3 mm down the base edge and tape the remaining 7 mm underneath. Cavalry also prints separate front/back name wraps.' : ''}`;
+  $('fold-description').textContent = `${infantry.unitType}: ${infantry.width} × ${+infantry.height.toFixed(2)} mm unfolded, ${+infantry.pitch.toFixed(2)} mm between ranks. ${cavalry.unitType}: ${cavalry.width} × ${+cavalry.height.toFixed(2)} mm unfolded, ${+cavalry.pitch.toFixed(2)} mm between riders. Flat feet total 20 mm for infantry and 40 mm for cavalry.${setup.nameplates && setup.labelPlacement === 'attached' ? ' Wraparound tabs add 10 mm at both infantry ends, or 10 mm on both sides of each cavalry ground section. Fold 3 mm down the base edge and tape the remaining 7 mm underneath. Cavalry also prints separate front/back name wraps.' : ''}`;
 }
 
 $('assembly').innerHTML = '<li>Print the PDF on one side of the paper at <strong>100% / actual size</strong>. Measure the 40 mm rule before cutting.</li><li>Score the dashed and dotted lines, then cut each complete net along its solid outline. In wraparound mode, keep the cavalry side tabs connected to the ground sections; cut the notches beside the figure panels. Keep the connecting ground sections intact.</li><li>Mountain-fold each dashed crest, bringing the unprinted backs of the paired figure panels together. Glue those backs to form a doubled upright.</li><li>Valley-fold the dotted lines at the feet. Glue the undersides of the colored ground sections to your matching base (40 × 20 mm Foot; selected 40 × 20, 40 × 30 or 40 × 40 mm Cavalry and Monstrosities; 20 × 20 mm Heroes), with the colored faces showing.</li><li>Infantry ranks run across the 40 mm frontage. Cavalry profiles run along the selected base depth, side by side across the frontage. Keep the rectangular figure panels for this first version; the background color fills their open spaces.</li><li>For wraparound tabs, mountain-fold at the base edge and again 3 mm farther out, then tape the remaining 7 mm underneath. Infantry names sit on the 3 mm front/rear edge bands. Cavalry side tabs wrap down and underneath; its separate front/back name strips have a 3 mm name band between 3 mm top and underside flaps. Fold at both lines and tape the flaps to the base. For separate labels, cut the nameplates (38 × 4 mm units; 18 × 4 mm heroes) and glue each to its matching base. Captions identify the artwork and base number.</li>';

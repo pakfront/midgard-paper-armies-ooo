@@ -32,6 +32,10 @@ The catalog currently uses `kind: 'Infantry'` for Foot, `kind: 'Mounted'` for Ca
 
 Keep catalog IDs stable when renaming units or artwork so saved setups retain quantities and names. The Giant retains the legacy ID `orc-troll`; Trolls retains `orc-monstrosities`. Use `artwork/middle-earth-third-age/Orcs/orc-trolls.png` for the two-Troll artwork.
 
+## Battle roles and formation settings
+
+The workshop supports per-catalog-unit role choices for Midgard-style armies: Foot can be Warriors or Skirmishers; Cavalry can be Heavy Riders or Light Riders. These are user-selected battle roles, separate from the artwork’s figure density. All copies of a selected unit share its role. Warriors use `ranks` (default 2); Skirmishers use `skirmisherRanks` (default 1); Heavy Riders use `riders` (default 4); Light Riders use `lightRiders` (default 3). `unitTypes` stores choices by stable catalog ID. Heroes and Monstrosities retain their fixed upright counts. Legacy setups keep their saved `ranks`/`riders` as Warriors/Heavy Riders and default missing new settings.
+
 ## Validation
 
 For changes to fold geometry or rendering, run the relevant browser/PDF tests in `tests/test_workshop.py`. Artwork and filename changes should be checked for successful loading and PDF export. Keep README descriptions and recorded artwork paths current.
