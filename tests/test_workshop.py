@@ -465,9 +465,57 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['assets'], 4)
         self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
 
+    def test_dynamic_cavalry_artwork_and_pdf_export(self):
+        result = self.page.evaluate("""async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const ids = ['orc-lunging-wargs', 'mordor-charging-wargs',
+            'rohan-sword-riders', 'gondor-charging-lancers', 'rohan-couched-lancers'];
+          const arts = ids.map(id => catalog.find(a => a.id === id));
+          const images = await Promise.all(arts.map(a => new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width; canvas.height = img.height;
+              const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+              const data = ctx.getImageData(0, 0, img.width, img.height).data;
+              let clear = 0, solid = 0;
+              for(let i=3; i<data.length; i+=4) {
+                if(data[i] === 0) clear++;
+                if(data[i] >= 250) solid++;
+              }
+              resolve({clear, solid});
+            };
+            img.onerror = reject; img.src = a.path;
+          })));
+          const exports = [];
+          for(const depth of [20, 30, 40]) {
+            const setup = {...defaultSetup(), cavalryBaseDepth:depth, nameplates:true,
+              quantities:Object.fromEntries(catalog.map(a => [a.id, ids.includes(a.id) ? 1 : 0]))};
+            const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+            const bytes = await createPDF(layout, assets);
+            const pdf = await PDFLib.PDFDocument.load(bytes);
+            exports.push({total:layout.total, bytes:bytes.length,
+              pages:pdf.getPageCount(), expected:layout.pages.length});
+          }
+          return {images, exports, mounted:arts.every(a => a.kind === 'Mounted' && !a.hero),
+            originals:['orc-wargs', 'rohan-spears', 'rohan-charging-riders', 'gondor-horse']
+              .every(id => catalog.some(a => a.id === id))};
+        }""")
+        self.assertTrue(result['mounted'])
+        self.assertTrue(result['originals'])
+        for image in result['images']:
+            self.assertGreater(image['clear'], 0)
+            self.assertGreater(image['solid'], 0)
+        for exported in result['exports']:
+            self.assertEqual(exported['total'], 5)
+            self.assertGreater(exported['bytes'], 1000)
+            self.assertEqual(exported['pages'], exported['expected'])
+
     def test_mordor_faction_artwork_and_pdf_export(self):
         self.page.locator('[data-filter="Mordor"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 6)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 7)
         result = self.page.evaluate('''async () => {
           const {catalog} = await import('./src/catalog.js');
           const {defaultSetup, layoutSetup} = await import('./src/model.js');
@@ -495,8 +543,8 @@ class WorkshopTests(unittest.TestCase):
           return {images, total: layout.total, assets: assets.size, pdf: bytes.length,
             pages: pdf.getPageCount(), expected: layout.pages.length};
         }''')
-        self.assertEqual(result['total'], 6)
-        self.assertEqual(result['assets'], 12)
+        self.assertEqual(result['total'], 7)
+        self.assertEqual(result['assets'], 14)
         self.assertGreater(result['pdf'], 1000)
         self.assertEqual(result['pages'], result['expected'])
         for image in result['images']:
@@ -798,7 +846,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_rohan_hero_square_base_and_export(self):
         self.page.locator('[data-filter="Rohan"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 9)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 11)
         result = self.page.evaluate("""async () => {
           const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
           const {catalog} = await import('./src/catalog.js');
@@ -1116,7 +1164,7 @@ class WorkshopTests(unittest.TestCase):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
         self.page.locator('[data-filter="Orcs"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 10)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 11)
         self.assertEqual(self.page.locator('.art-card:visible:not([data-faction="Orcs"])').count(), 0)
         self.assertEqual(self.page.locator('#qty-gondor-swords').input_value(), '1')
         self.page.locator('#qty-orc-axes').fill('20')

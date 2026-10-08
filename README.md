@@ -4,6 +4,8 @@ A static paper-army workshop for folded standees on **40 mm wide × 20 mm deep b
 
 Rohan adds foot spearmen and archers, mounted spearmen, horse archers, and Royal Guard, with a separate charging-rider variant (galloping horse and leveled lance), plus **Éowyn as a mounted hero on a 20 × 20 mm base**. Her single mirrored upright ignores the army rider count, uses the mounted panel height, and unfolds to 20 × 62 mm at the default height. Hero nameplates are 18 × 4 mm.
 
+New dynamic Cavalry variants add **Orc lunging warg riders**, **Mordor charging warg riders**, **Rohan sword riders**, **Rohan couched-lance riders**, and **Gondor charging lancers** alongside all existing artwork. Each uses mirrored side profiles, adjustable Heavy/Light Rider counts, and the standard **40 × 20 mm base** with optional deeper bases. Prompts and asset paths are recorded in [dynamic cavalry notes](output/imagegen/dynamic-cavalry-notes.md).
+
 Gondor also includes generic mounted heroes: a sword-bearing captain and a standard bearer, plus dynamic variants with a charging captain and a herald on a rearing horse. Each uses one mirrored upright on a **20 × 20 mm base**, independent of the cavalry rider count, with an optional **18 × 4 mm** nameplate.
 
 Orcs include two generic mounted heroes: an axe-wielding chieftain on a charging warg and a herald with a ragged wolf banner. Both use the same 20 × 20 mm hero bases, single mirrored upright, and optional 18 × 4 mm nameplates.

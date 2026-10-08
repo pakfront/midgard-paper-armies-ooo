@@ -4,6 +4,11 @@ export const eras = [
 ];
 
 export const catalog = [
+  {id: 'rohan-couched-lancers', name: 'Rohan couched-lance riders', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Mounted', height: 20, file: 'rohan-couched-lance-profile.png', note: 'Charging variant · galloping horse · lance braced under arm · 40 × 20 mm'},
+  {id: 'orc-lunging-wargs', name: 'Orc lunging warg riders', era: 'middle-earth-third-age', faction: 'Orcs', kind: 'Mounted', height: 20, file: 'orc-lunging-warg-profile.png', note: 'Dynamic variant · Lunging warg · raised cleaver · 40 × 20 mm'},
+  {id: 'mordor-charging-wargs', name: 'Mordor charging warg riders', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Mounted', height: 20, file: 'mordor-charging-warg-profile.png', note: 'Dynamic variant · Bounding warg · thrusting spear · 40 × 20 mm'},
+  {id: 'rohan-sword-riders', name: 'Rohan sword riders', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Mounted', height: 20, file: 'rohan-sword-rider-profile.png', note: 'Dynamic variant · Cantering horse · raised sword · 40 × 20 mm'},
+  {id: 'gondor-charging-lancers', name: 'Gondor charging lancers', era: 'middle-earth-third-age', faction: 'Gondor', kind: 'Mounted', height: 20, file: 'gondor-charging-lancer-profile.png', note: 'Dynamic variant · Galloping horse · leveled lance · 40 × 20 mm'},
   {id: 'isengard-dunlending-javelinmen', name: 'Dunlending javelinmen', era: 'middle-earth-third-age', faction: 'Isengard', kind: 'Infantry', height: 13.5, file: 'dunlending-javelinmen.png', note: 'Light Foot · eight varied hillmen with javelins · loose rank · 40 × 20 mm'},
   {id: 'mordor-trackers', name: 'Mordor trackers', era: 'middle-earth-third-age', faction: 'Mordor', kind: 'Infantry', height: 13.5, file: 'mordor-trackers.png', note: 'Skirmish Foot · six Orc bowmen · Mordor palette · loose formation · 40 × 20 mm'},
   {id: 'rohan-outriders', name: 'Rohan outriders', era: 'middle-earth-third-age', faction: 'Rohan', kind: 'Mounted', height: 20, file: 'rohan-outrider-profile.png', note: 'Light Cavalry · spear and small shield · mirrored horse profile · 40 × 20 mm'},
