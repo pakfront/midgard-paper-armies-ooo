@@ -179,7 +179,7 @@ export function pageScene(layout, index) {
   const text = (value, x, y, size = 2, color = ink, rotation = 0) => ops.push({type: 'text', value, x, y, size, color, rotation});
   const line = (x, y, x2, y2, color = ink, thickness = .14, dash = []) => ops.push({type: 'line', x, y, x2, y2, color, thickness, dash});
   rect(0, 0, width, height, '#ffffff');
-  text(`PAPER ARMY STANDEES / units 40 x 20 mm; cavalry 40 x ${setup.cavalryBaseDepth} mm; heroes 20 x 20 mm`, margin, margin + 2, 2.7);
+  text(`PAPER ARMY STANDEES / Foot 40 x 20 mm; cavalry 40 x ${setup.cavalryBaseDepth} mm; monsters 40 x ${setup.monstrosityBaseDepth} mm; heroes 20 x 20 mm`, margin, margin + 2, 2.7);
   text('Print at 100% / actual size. Cut solid outlines; fold dashed crests and dotted feet.', margin, margin + 6, 2);
   for (const strip of layout.pages[index]) {
     const {x: netX, y, sections} = strip, x = netX + (strip.bodyX || 0), w = strip.bodyWidth ?? strip.width;
@@ -282,7 +282,7 @@ export async function createPDF(layout, assets, progress = () => {}) {
   const {PDFDocument, StandardFonts, rgb, degrees} = globalThis.PDFLib;
   const doc = await PDFDocument.create(), font = await doc.embedFont(StandardFonts.Helvetica);
   doc.setTitle('Paper Army Standees'); doc.setCreator('Paper Army Standees workshop');
-  doc.setSubject(`Units 40 x 20 mm; cavalry 40 x ${layout.setup.cavalryBaseDepth} mm; heroes 20 x 20 mm. Print at 100 percent / actual size.`);
+  doc.setSubject(`Foot 40 x 20 mm; cavalry 40 x ${layout.setup.cavalryBaseDepth} mm; Monstrosities 40 x ${layout.setup.monstrosityBaseDepth} mm; heroes 20 x 20 mm. Print at 100 percent / actual size.`);
   const point = 72 / 25.4, embedded = new Map();
   const color = hex => rgb(...[1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255));
   for (let i = 0; i < layout.pages.length; i++) {

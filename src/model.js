@@ -3,7 +3,7 @@ import {pack} from './packing.js';
 
 export function defaultSetup() {
   return {version: 1, nameplates: false, names: {}, copyNames: {}, ranks: 2, riders: 4, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
-    cavalryBaseDepth: 20, fakeShadows: false, figureBackground: 'solid', gradientBottom: '#456b94', gradientTop: '#eef7ff', labelPlacement: 'separate',
+    cavalryBaseDepth: 20, monstrosityBaseDepth: 20, fakeShadows: false, figureBackground: 'solid', gradientBottom: '#456b94', gradientTop: '#eef7ff', labelPlacement: 'separate',
     groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'letter', orientation: 'portrait', margin: 10, gap: 4, guides: true,
     quantities: Object.fromEntries(catalog.map(art => [art.id, ['gondor-swords', 'gondor-horse', 'orc-axes', 'orc-wargs'].includes(art.id) ? 1 : 0]))};
 }
@@ -19,7 +19,7 @@ export function validateSetup(input) {
   number('ranks', 1, 4, true); number('riders', 2, 4, true);
   number('infantryHeight', 10, 30); number('mountedHeight', 15, 30);
   number('margin', 5, 25); number('gap', 2, 10);
-  for (const [key, values] of Object.entries({cavalryBaseDepth: [20, 40], figureBackground: ['solid', 'gradient'], labelPlacement: ['separate', 'attached']})) {
+  for (const [key, values] of Object.entries({cavalryBaseDepth: [20, 30, 40], monstrosityBaseDepth: [20, 30, 40], figureBackground: ['solid', 'gradient'], labelPlacement: ['separate', 'attached']})) {
     if (input[key] === undefined) continue;
     if (!values.includes(input[key])) throw Error(`Invalid ${key}.`);
     result[key] = input[key];
@@ -71,7 +71,10 @@ export function validateSetup(input) {
 // Each pair doubles back at its crest; only flat feet contribute to the base span.
 export function makeStrip(art, setup, copy = 1) {
   const mounted = art.kind === 'Mounted';
-  const baseWidth = art.baseWidth ?? 40, baseDepth = mounted && !art.hero ? (setup.cavalryBaseDepth ?? 20) : (art.baseDepth ?? 20);
+  const baseWidth = art.baseWidth ?? 40;
+  const baseDepth = art.hero ? (art.baseDepth ?? 20)
+    : mounted ? (setup.cavalryBaseDepth ?? 20)
+    : art.kind === 'Monster' ? (setup.monstrosityBaseDepth ?? 20) : (art.baseDepth ?? 20);
   const width = mounted ? baseDepth : baseWidth, span = mounted ? baseWidth : baseDepth;
   const count = art.uprightCount ?? (art.hero ? 1 : mounted ? setup.riders : setup.ranks);
   const panelHeight = art.panelHeight ?? (mounted ? setup.mountedHeight : setup.infantryHeight);

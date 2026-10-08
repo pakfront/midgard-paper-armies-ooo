@@ -176,7 +176,8 @@ class WorkshopTests(unittest.TestCase):
 
     def test_letter_square_cavalry_and_new_settings_round_trip(self):
         expect(self.page.locator('#paper')).to_have_value('letter')
-        self.page.locator('#cavalry-base-depth').select_option('40')
+        self.page.locator('#cavalry-base-depth').select_option('30')
+        self.page.locator('#monstrosity-base-depth').select_option('40')
         self.page.locator('#figure-background').select_option('gradient')
         self.page.locator('#gradient-bottom').fill('#345678')
         self.page.locator('#gradient-top').fill('#effaff')
@@ -191,7 +192,7 @@ class WorkshopTests(unittest.TestCase):
         self.ready()
         self.page.reload()
         self.ready()
-        for selector, value in [('#cavalry-base-depth', '40'), ('#figure-background', 'gradient'),
+        for selector, value in [('#cavalry-base-depth', '30'), ('#monstrosity-base-depth', '40'), ('#figure-background', 'gradient'),
                                 ('#gradient-bottom', '#345678'), ('#gradient-top', '#effaff'),
                                 ('#label-placement', 'attached')]:
             expect(self.page.locator(selector)).to_have_value(value)
@@ -199,7 +200,7 @@ class WorkshopTests(unittest.TestCase):
           const {defaultSetup,validateSetup,makeStrip}=await import('./src/model.js');
           const {catalog}=await import('./src/catalog.js');
           const legacy=defaultSetup();legacy.paper='a4';
-          for(const k of ['cavalryBaseDepth','figureBackground','gradientBottom','gradientTop','labelPlacement'])delete legacy[k];
+          for(const k of ['cavalryBaseDepth','monstrosityBaseDepth','figureBackground','gradientBottom','gradientTop','labelPlacement'])delete legacy[k];
           const restored=validateSetup(legacy), s={...defaultSetup(),cavalryBaseDepth:40};
           const cav=makeStrip(catalog.find(a=>a.kind==='Mounted'&&!a.hero),s);
           return {legacy:restored, cavalry:[cav.baseWidth,cav.baseDepth,cav.width,cav.height,cav.pitch],
@@ -209,8 +210,61 @@ class WorkshopTests(unittest.TestCase):
         self.assertTrue(all(h == [20, 20, 1] for h in result['heroes']))
         self.assertEqual(result['legacy']['paper'], 'a4')
         self.assertEqual(result['legacy']['cavalryBaseDepth'], 20)
+        self.assertEqual(result['legacy']['monstrosityBaseDepth'], 20)
         self.assertEqual(result['legacy']['figureBackground'], 'solid')
         self.assertEqual(result['legacy']['labelPlacement'], 'separate')
+
+    def test_optional_cavalry_and_monstrosity_depth_geometry_and_pdf(self):
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, validateSetup, makeStrip, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const runs = [];
+          for (const depth of [20, 30, 40]) {
+            const setup = {...defaultSetup(), cavalryBaseDepth: depth, monstrosityBaseDepth: depth,
+              nameplates: true, labelPlacement: 'attached', riders: 2};
+            const selected = ['gondor-horse', 'orc-troll', 'orc-monstrosities', 'gondor-ballista',
+              'rohan-eowyn', 'gondor-swords'];
+            setup.quantities = Object.fromEntries(catalog.map(a => [a.id, selected.includes(a.id) ? 1 : 0]));
+            const strips = catalog.map(a => {
+              const s = makeStrip(a, setup), original = makeStrip(a, defaultSetup());
+              return {id: a.id, hero: !!a.hero, kind: a.kind, depth: s.baseDepth,
+                bodyWidth: s.bodyWidth, bodyHeight: s.bodyHeight,
+                ground: s.sections.filter(p => p.kind === 'ground').reduce((n,p) => n+p.height,0),
+                count: s.count, originalCount: original.count, panel: s.panelHeight,
+                originalPanel: original.panelHeight, tabs: s.wrapTabs};
+            });
+            const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+            const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
+            runs.push({depth, strips, pages: pdf.getPageCount(), expected: layout.pages.length,
+              pdf: bytes.length, subject: pdf.getSubject()});
+          }
+          const rejects = [];
+          for (const key of ['cavalryBaseDepth','monstrosityBaseDepth']) {
+            for (const value of [25, '30', null]) {
+              try {validateSetup({...defaultSetup(), [key]: value}); rejects.push(false);}
+              catch {rejects.push(true);}
+            }
+          }
+          return {runs, rejects};
+        }''')
+        self.assertTrue(all(result['rejects']))
+        for run in result['runs']:
+            self.assertEqual(run['pages'], run['expected'])
+            self.assertGreater(run['pdf'], 1000)
+            self.assertIn(f"Monstrosities 40 x {run['depth']} mm", run['subject'])
+            for strip in run['strips']:
+                expected_depth = run['depth'] if not strip['hero'] and strip['kind'] in ['Mounted', 'Monster'] else 20
+                self.assertEqual(strip['depth'], expected_depth)
+                if strip['kind'] == 'Monster':
+                    self.assertEqual(strip['count'], strip['originalCount'])
+                    self.assertEqual(strip['panel'], strip['originalPanel'])
+                    self.assertEqual(strip['ground'], run['depth'])
+                    self.assertEqual(strip['bodyWidth'], 40)
+                    self.assertEqual(strip['bodyHeight'], run['depth'] + 2 * strip['count'] * strip['panel'])
+                elif strip['kind'] == 'Mounted':
+                    self.assertEqual(strip['bodyWidth'], expected_depth)
+                    self.assertEqual(strip['ground'], 20 if strip['hero'] else 40)
 
     def test_gradient_direction_including_blank_reverse_and_pdf(self):
         result = self.page.evaluate('''async () => {

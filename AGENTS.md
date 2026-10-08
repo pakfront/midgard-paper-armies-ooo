@@ -11,6 +11,8 @@ Use these four unit types when designing, naming, and adding units:
 | Foot | Multiple foot figures, following the existing infantry units | 40 mm × 20 mm |
 | Cavalry | Multiple mounted figures, following the existing cavalry units | 40 mm × 20 mm |
 
+Cavalry and Monstrosities may optionally use 40 × 30 mm or 40 × 40 mm bases via setup-wide depth settings; 40 × 20 mm remains the default. Foot and Heroes retain their standard bases. Monstrosities keep their upright counts and fixed panel heights at all depths.
+
 Monstrosities is a generic category, not the name of a specific unit. Use descriptive unit and artwork names such as Giant, Trolls, or the particular war machine. Giant, the two-Troll unit, and the two-Ogre unit belong to Monstrosities.
 
 Base dimensions and figure counts describe the assembled model. Upright layout follows the subject: heroes use a single upright; the existing Giant, Trolls, and Ogres units use one upright with fixed panel heights (35 mm for Giant; 23 mm for Trolls and Ogres). Monstrosities may be taller than ordinary foot figures. Preserve monster artwork proportions and keep complete figures and weapons within the print panel.
