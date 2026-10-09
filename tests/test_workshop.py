@@ -327,6 +327,58 @@ class WorkshopTests(unittest.TestCase):
                     self.assertEqual(strip['bodyWidth'], expected_depth)
                     self.assertEqual(strip['ground'], 20 if strip['hero'] else 40)
 
+    def test_mounted_artwork_size_stays_constant_at_deeper_bases(self):
+        result = self.page.evaluate("""async () => {
+          const {catalog}=await import('./src/catalog.js');
+          const {defaultSetup,layoutSetup}=await import('./src/model.js');
+          const {prepareArtwork,createPDF,pageScene,previewSVG}=await import('./src/render.js');
+          const ids=['rohan-couched-lancers','orc-lunging-wargs','gondor-horse','rohan-eowyn'];
+          const runs=[];
+          for(const depth of [20,30,40]) {
+            const setup={...defaultSetup(),cavalryBaseDepth:depth,riders:2,fakeShadows:true,
+              nameplates:true,labelPlacement:'attached',
+              quantities:Object.fromEntries(catalog.map(a=>[a.id,ids.includes(a.id)?1:0]))};
+            const layout=layoutSetup(setup),assets=await prepareArtwork(layout),bounds={};
+            for(const [key,asset] of assets) {
+              if(key.startsWith('shadow:')) continue;
+              const image=new Image();image.src=asset.url;await image.decode();
+              const c=document.createElement('canvas');c.width=image.width;c.height=image.height;
+              const ctx=c.getContext('2d');ctx.drawImage(image,0,0);
+              const data=ctx.getImageData(0,0,c.width,c.height).data;
+              let left=c.width,right=-1,top=c.height,bottom=-1;
+              for(let y=0;y<c.height;y++) for(let x=0;x<c.width;x++) {
+                if(data[(y*c.width+x)*4+3]>128) {
+                  left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);
+                }
+              }
+              const [id,,height,variant]=key.split(':');
+              const width=catalog.find(a=>a.id===id).hero?20:depth;
+              bounds[id+':'+variant]={width:(right-left+1)*width/c.width,
+                height:(bottom-top+1)*Number(height)/c.height,
+                center:(left+right+1)*width/(2*c.width),
+                bottomGap:(c.height-bottom-1)*Number(height)/c.height,panelWidth:width};
+            }
+            const bytes=await createPDF(layout,assets),pdf=await PDFLib.PDFDocument.load(bytes);
+            const ops=layout.pages.flatMap((_,i)=>pageScene(layout,i));
+            runs.push({depth,bounds,pages:pdf.getPageCount(),expected:layout.pages.length,
+              bytes:bytes.length,preview:previewSVG(layout,0,assets).includes('<image'),
+              widths:ops.filter(o=>o.key?.startsWith('rohan-couched-lancers:')).map(o=>o.w)});
+          }
+          return runs;
+        }""")
+        baseline = result[0]['bounds']
+        for run in result:
+            self.assertGreater(run['bytes'], 1000)
+            self.assertEqual(run['pages'], run['expected'])
+            self.assertTrue(run['preview'])
+            self.assertTrue(run['widths'])
+            self.assertTrue(all(w == run['depth'] for w in run['widths']))
+            for key, bounds in run['bounds'].items():
+                self.assertAlmostEqual(bounds['width'], baseline[key]['width'], delta=0.1)
+                self.assertAlmostEqual(bounds['height'], baseline[key]['height'], delta=0.1)
+                self.assertAlmostEqual(bounds['bottomGap'], baseline[key]['bottomGap'], delta=0.1)
+                self.assertAlmostEqual(bounds['center'], bounds['panelWidth']/2, delta=0.1)
+
     def test_gradient_direction_including_blank_reverse_and_pdf(self):
         result = self.page.evaluate('''async () => {
           const {defaultSetup,layoutSetup}=await import('./src/model.js');
@@ -361,7 +413,7 @@ class WorkshopTests(unittest.TestCase):
           const {catalog}=await import('./src/catalog.js');
           const {prepareArtwork,pageScene,createPDF}=await import('./src/render.js');
           const results=[];
-          for(const depth of [20,40]) for(const paper of ['letter','a4']) for(const orientation of ['portrait','landscape']) {
+          for(const depth of [20,30,40]) for(const paper of ['letter','a4']) for(const orientation of ['portrait','landscape']) {
             const s={...defaultSetup(),cavalryBaseDepth:depth,paper,orientation,riders:2,nameplates:true,labelPlacement:'attached',
               names:{...Object.fromEntries(catalog.filter(a=>a.hero).map(a=>[a.id,'Hero'])),'gondor-swords':'Guard'},copyNames:{'gondor-swords':['First Guard']},
               quantities:Object.fromEntries(catalog.map(a=>[a.id,1]))};
@@ -375,7 +427,7 @@ class WorkshopTests(unittest.TestCase):
             results.push({overlap,outside,pages:pdf.getPageCount(),expected:l.pages.length,
               labels:l.pages.flat().filter(x=>x.kind==='nameplate').map(x=>({wrap:x.wrap,edge:x.edge,width:x.width,height:x.height,baseWidth:x.art.baseWidth||40})),named:ops.filter(o=>o.value==='First Guard').map(o=>({rotation:o.rotation,size:o.size})),text:ops.filter(o=>o.type==='text').map(o=>o.value),
               strips:l.pages.flat().filter(x=>x.kind!=='nameplate').map(x=>({base:[x.baseWidth,x.baseDepth],mounted:x.art.kind==='Mounted',hero:!!x.art.hero,
-                ground:x.sections.filter(s=>s.kind==='ground').reduce((n,s)=>n+s.height,0),span:x.span,
+                count:x.count,panel:x.panelHeight,ground:x.sections.filter(s=>s.kind==='ground').reduce((n,s)=>n+s.height,0),span:x.span,
                 bounds:[x.width-x.bodyWidth,x.height-x.bodyHeight],tabs:x.wrapTabs,bodyX:x.bodyX,bodyY:x.bodyY,
                 imageWidths:ops.filter(o=>o.type==='image'&&o.x===x.x&&o.y>=x.y&&o.y<x.y+x.bodyHeight).map(o=>o.w)}))});
           }
@@ -398,20 +450,17 @@ class WorkshopTests(unittest.TestCase):
             self.assertIn('First Guard', layout['text'])
             for strip in layout['strips']:
                 self.assertAlmostEqual(strip['ground'], strip['span'])
-                self.assertEqual(strip['bounds'], [20, 0] if strip['mounted'] else [0, 20])
-                for tab in strip['tabs']:
-                    self.assertEqual(tab['width'] if strip['mounted'] else tab['height'], 10)
-                if strip['mounted']:
-                    self.assertAlmostEqual(sum(t['height'] for t in strip['tabs']), 2 * strip['span'])
-                    self.assertEqual(strip['bodyY'], 0)
-                    self.assertEqual(strip['bodyX'], 10)
-                    for edge in ['front', 'rear']:
-                        tabs = [t for t in strip['tabs'] if t['edge'] == edge]
-                        self.assertAlmostEqual(sum(t['height'] for t in tabs), strip['span'])
-                        self.assertTrue(all(t['x'] == (0 if edge == 'front' else strip['base'][1] + 10) for t in tabs))
-                else:
-                    self.assertEqual([t['edge'] for t in strip['tabs']], ['front', 'back'])
-                    self.assertEqual(strip['bodyY'], 10)
+                self.assertEqual(strip['bounds'], [0, 20])
+                self.assertEqual(strip['bodyY'], 10)
+                self.assertEqual(strip['bodyX'], 0)
+                self.assertEqual([t['edge'] for t in strip['tabs']], ['front', 'back'])
+                self.assertEqual(len(strip['tabs']), 2)
+                for tab, expected_y in zip(strip['tabs'], [0, strip['span'] + 2 * strip['count'] * strip['panel'] + 10]):
+                    self.assertEqual(tab['height'], 10)
+                    self.assertEqual(tab['width'], strip['base'][1] if strip['mounted'] else strip['base'][0])
+                    self.assertEqual(tab['x'], 0)
+                    self.assertEqual(tab['y'], expected_y)
+                    self.assertFalse(tab['side'])
                 if strip['hero']:
                     self.assertEqual(strip['base'], [20, 20])
 
