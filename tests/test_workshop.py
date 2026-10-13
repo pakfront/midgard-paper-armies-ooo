@@ -564,7 +564,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_mordor_faction_artwork_and_pdf_export(self):
         self.page.locator('[data-filter="Mordor"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 7)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 8)
         result = self.page.evaluate('''async () => {
           const {catalog} = await import('./src/catalog.js');
           const {defaultSetup, layoutSetup} = await import('./src/model.js');
@@ -579,26 +579,26 @@ class WorkshopTests(unittest.TestCase):
               let clear = 0, solid = 0;
               for (let i = 3; i < pixels.length; i += 4) {
                 if (pixels[i] === 0) clear++;
-                if (pixels[i] === 255) solid++;
+                // Generated PNG interiors can be 253/254 rather than exactly 255.
+                if (pixels[i] >= 250) solid++;
               }
-              resolve({clear, solid});
+              resolve({clear, solid, pixels:img.width * img.height});
             }; img.onerror = reject; img.src = a.path;
           })));
-          const setup = {...defaultSetup(), nameplates: true,
-            names: {'mordor-banner-bearer': 'Mordor herald'}};
+          const setup = {...defaultSetup(), nameplates: true};
           setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
           const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
           const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
           return {images, total: layout.total, assets: assets.size, pdf: bytes.length,
             pages: pdf.getPageCount(), expected: layout.pages.length};
         }''')
-        self.assertEqual(result['total'], 7)
-        self.assertEqual(result['assets'], 14)
+        self.assertEqual(result['total'], 8)
+        self.assertEqual(result['assets'], 16)
         self.assertGreater(result['pdf'], 1000)
         self.assertEqual(result['pages'], result['expected'])
         for image in result['images']:
             self.assertGreater(image['clear'], 0)
-            self.assertGreater(image['solid'], 0)
+            self.assertGreater(image['solid'], image['pixels'] * 0.1)
 
     def test_light_troop_expansion_factions_artwork_and_export(self):
         units = {'isengard-dunlending-javelinmen': 'Isengard', 'mordor-trackers': 'Mordor',
@@ -733,7 +733,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_middle_earth_expansion_artwork_and_foot_heroes_export(self):
         ids = ['isengard-warg-riders', 'rohan-foot-captain', 'mordor-spearmen',
-               'mordor-morannon', 'mordor-banner-bearer', 'mordor-catapult',
+               'mordor-morannon', 'mordor-banner-bearer', 'mordor-warboss', 'mordor-catapult',
                'gondor-foot-captain', 'harad-spearmen', 'harad-archers',
                'harad-cavalry', 'gondor-aragorn-foot', 'mordor-cave-troll']
         result = self.page.evaluate('''async ids => {
@@ -767,7 +767,7 @@ class WorkshopTests(unittest.TestCase):
                 self.assertEqual(strip['panel'], 35 if strip['id'] == 'mordor-cave-troll' else 23)
             else:
                 self.assertEqual(strip['count'], 2 if strip['kind'] == 'Mounted' else 3)
-        self.assertEqual(result['labels'].count([18, 4]), 4)
+        self.assertEqual(result['labels'].count([18, 4]), 5)
 
     def test_flat_feet_geometry_and_perpendicular_axes(self):
         result = self.page.evaluate('''async () => {
@@ -1159,6 +1159,56 @@ class WorkshopTests(unittest.TestCase):
         expect(self.page.locator('#sheet')).to_contain_text('Choose at least one base')
         expect(self.page.locator('#download')).to_be_disabled()
 
+    def test_warboss_heroes_artwork_geometry_labels_and_pdf(self):
+        for faction, unit in [('Isengard', 'isengard-warboss'), ('Orcs', 'orc-warboss')]:
+            self.page.locator(f'[data-filter="{faction}"]').click()
+            expect(self.page.locator(f'[data-art="{unit}"]')).to_be_visible()
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup, unitTypeOptions} = await import('./src/model.js');
+          const {prepareArtwork, pageScene, createPDF} = await import('./src/render.js');
+          const arts = catalog.filter(a => ['isengard-warboss', 'orc-warboss', 'mordor-warboss'].includes(a.id));
+          const images = [];
+          for (const art of arts) {
+            const img = new Image(); img.src = art.path; await img.decode();
+            const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+            const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+            const pixels = ctx.getImageData(0, 0, img.width, img.height).data;
+            let clear = 0, solid = 0;
+            for (let i = 3; i < pixels.length; i += 4) {
+              if (pixels[i] === 0) clear++;
+              if (pixels[i] >= 250) solid++;
+            }
+            const corners = [0, img.width - 1, (img.height - 1) * img.width, img.width * img.height - 1]
+              .map(i => pixels[i * 4 + 3]);
+            images.push({clear, solid, corners, pixels:img.width * img.height});
+          }
+          const exports = [];
+          for (const labelPlacement of ['separate', 'attached']) {
+            const setup = {...defaultSetup(), ranks:4, skirmisherRanks:3, riders:4,
+              cavalryBaseDepth:40, monstrosityBaseDepth:40, nameplates:true, labelPlacement,
+              quantities:Object.fromEntries(catalog.map(art => [art.id, arts.includes(art) ? 1 : 0]))};
+            const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+            const strips = layout.pages.flat().filter(s => s.kind !== 'nameplate');
+            const ops = layout.pages.flatMap((_, i) => pageScene(layout, i));
+            const pdf = await PDFLib.PDFDocument.load(await createPDF(layout, assets));
+            exports.push({pages:pdf.getPageCount(), expected:layout.pages.length,
+              strips:strips.map(s => [s.art.hero, s.baseWidth, s.baseDepth, s.count, s.art.preserveAspect]),
+              names:arts.map(art => ops.some(op => op.type === 'text' && op.value === art.name))});
+          }
+          return {images, exports, roles:arts.map(unitTypeOptions), names:arts.map(a => a.name)};
+        }''')
+        self.assertEqual(result['names'], ['Isengard Boss', 'Orc Warboss', 'Mordor Warboss'])
+        self.assertEqual(result['roles'], [[], [], []])
+        for image in result['images']:
+            self.assertGreater(image['clear'], image['pixels'] * 0.1)
+            self.assertGreater(image['solid'], image['pixels'] * 0.1)
+            self.assertEqual(image['corners'], [0, 0, 0, 0])
+        for export in result['exports']:
+            self.assertEqual(export['pages'], export['expected'])
+            self.assertEqual(export['strips'], [[True, 20, 20, 1, True]] * 3)
+            self.assertEqual(export['names'], [True] * 3)
+
     def test_all_default_names_fit_labels_and_export(self):
         result = self.page.evaluate('''async () => {
           const {catalog, DEFAULT_NAME_LIMIT, HERO_NAME_LIMIT} = await import('./src/catalog.js');
@@ -1250,7 +1300,7 @@ class WorkshopTests(unittest.TestCase):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
         self.page.locator('[data-filter="Orcs"]').click()
-        self.assertEqual(self.page.locator('.art-card:visible').count(), 11)
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 12)
         self.assertEqual(self.page.locator('.art-card:visible:not([data-faction="Orcs"])').count(), 0)
         self.assertEqual(self.page.locator('#qty-gondor-swords').input_value(), '1')
         self.page.locator('#qty-orc-axes').fill('20')

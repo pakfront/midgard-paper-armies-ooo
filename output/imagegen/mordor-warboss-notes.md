@@ -1,0 +1,21 @@
+# Mordor Warboss
+
+Generated with built-in imagegen, with a genuine transparent background. The tool's final cutout has almost opaque interiors (alpha 253/254) and transparent exterior pixels. Browser checks accept alpha ≥ 250 for solid interior pixels and require them to cover at least 10% of the image, rather than requiring exact alpha 255.
+
+Asset: `artwork/middle-earth-third-age/Mordor/mordor-warboss.png`.
+Catalog ID: `mordor-warboss`; display and default label: **Mordor Warboss**.
+Single foot Hero on a 20 × 20 mm base, one upright, preserved artwork proportions, standard infantry panel height and silhouette/blank reverse. The default name is within the 14-character Hero limit.
+
+## Initial generation prompt
+
+Use case: stylized-concept. Asset type: transparent PNG artwork for a tiny printed paper miniature. Create exactly ONE Mordor Orc Warboss, a commanding foot leader, full body front-facing orthographic elevation. Broad powerful stocky Orc, muted ash-grey/grey-olive skin, minimal tusked stern face, iron-grey plate armor with broad lighter steel highlights, charcoal shadows, crimson ragged cloak and tunic, warm brown leather boots and belt. Carry a large robust cleaver axe upright near one shoulder and a black shield with a single bold crimson eye symbol in the other hand. Strong confident commanding pose, both boots on a common baseline. CLEAN PRINT STYLE matching simplified Mordor paper standees: bold crisp dark outlines, broad smooth FLAT color shapes, ONLY TWO OR THREE LARGE shading tones per material. No grain, texture, scratches, stipple, hatching, mail rings, hair strands, fine fittings or tiny ornament. Complete figure, both boots, entire axe and shield inside generous transparent padding on every edge. Genuine transparent RGBA background with opaque subject interiors. No scenery, ground, shadow, base, text, border, glow, other figures or banner. Preserve compact miniature proportions and readability when the entire figure including axe is printed about 14.5mm high. Portrait composition.
+
+## Shading and background cleanup prompt
+
+Use case: background-extraction. Edit target: Mordor Warboss paper miniature. Remove the ENTIRE dark blurred/colored background and all halo/glow, replace every pixel outside the character and weapon silhouette with genuine alpha=0 TRANSPARENCY. This is a printable cutout, not a portrait against a backdrop. Keep exactly this one complete foot Orc with full boots, complete axe and eye shield, armor and crimson cloak, pose, proportions and generous padding. Opaque interiors, smooth clean antialiased alpha edges. Also simplify mottled metallic and skin shading to broad smooth FLAT planes with only two or three large tones per material; keep bold dark contours, iron-grey armor, grey-olive skin, crimson cloth and brown leather. No scenery, ground, shadows, gradient backdrop, glow or texture. Output genuine transparent RGBA PNG.
+## Extraction prompt
+
+Extract ONLY the armored Orc, axe, shield and cloak from this image as a TRANSPARENT STICKER CUTOUT. The entire dark cloudy gradient behind him MUST disappear. Output a PNG with an empty alpha channel background (alpha 0 everywhere outside the silhouette). No background pixels, no dark grey fill, no vignette, no glow. Keep the complete character and all equipment exactly. This is background removal for paper miniatures, every pixel in all four corners and every pixel beyond the character outline must be transparent. Match the original colors and crisp flat illustration. Do not add any visual background.
+## Final opacity prompt
+
+Fix this transparent paper miniature PNG's alpha channel. Its subject interiors are accidentally translucent (alpha 253 and 254 instead of 255). Make the character, axe, shield, boots and cloak completely OPAQUE: alpha exactly 255 throughout every solid interior. Keep the background genuinely transparent at alpha exactly 0, with smooth antialiased edges. No translucent character, no glow, no dark vignette background. Preserve this single complete armored Mordor Orc Warboss and all his colors, proportions, equipment and flat ink illustration. Actual opaque cutout suitable for print. Do not change composition or add objects.
