@@ -1159,6 +1159,43 @@ class WorkshopTests(unittest.TestCase):
         expect(self.page.locator('#sheet')).to_contain_text('Choose at least one base')
         expect(self.page.locator('#download')).to_be_disabled()
 
+    def test_all_default_names_fit_labels_and_export(self):
+        result = self.page.evaluate('''async () => {
+          const {catalog, DEFAULT_NAME_LIMIT, HERO_NAME_LIMIT} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, pageScene, createPDF} = await import('./src/render.js');
+          const doc = await PDFLib.PDFDocument.create();
+          const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+          const failures = [], exports = [];
+          for (const art of catalog) {
+            const limit = art.hero ? HERO_NAME_LIMIT : DEFAULT_NAME_LIMIT;
+            if (art.name.length > limit) failures.push(`${art.id}: character limit`);
+            if (font.widthOfTextAtSize(art.name, 6) * 25.4 / 72 > (art.hero ? 16 : 36))
+              failures.push(`${art.id}: label width`);
+          }
+          for (const labelPlacement of ['separate', 'attached']) {
+            const setup = {...defaultSetup(), nameplates:true, labelPlacement,
+              quantities:Object.fromEntries(catalog.map(art => [art.id, 1]))};
+            const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+            const operations = layout.pages.flatMap((_, i) => pageScene(layout, i));
+            for (const art of catalog) {
+              if (!operations.some(op => op.type === 'text' && op.value === art.name))
+                failures.push(`${art.id}: missing default label`);
+            }
+            const bytes = await createPDF(layout, assets);
+            const pdf = await PDFLib.PDFDocument.load(bytes);
+            exports.push({pages:pdf.getPageCount(), expected:layout.pages.length});
+          }
+          return {failures, exports, names:catalog.map(art => art.name)};
+        }''')
+        self.assertEqual(result['failures'], [])
+        self.assertEqual(len(result['names']), len(set(result['names'])))
+        self.assertIn('Mordor Herald', result['names'])
+        self.assertIn('Gondor Lancers', result['names'])
+        self.assertIn('Gondor Militia', result['names'])
+        for export in result['exports']:
+            self.assertEqual(export['pages'], export['expected'])
+
     def test_nameplates_names_storage_pdf_and_readability(self):
         self.page.locator('#nameplates').check()
         self.page.locator('#qty-gondor-swords').fill('2')

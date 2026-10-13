@@ -46,10 +46,10 @@ Monstrosities is a generic unit type. Giant and Trolls are specific units within
 From this folder:
 
 ```sh
-python3 serve.py
+./serve.sh
 ```
 
-Open <http://localhost:8000>. Use `--port 8080` to choose another port. The helper binds to localhost and disables caching while working on artwork.
+Open <http://localhost:8000>. Use `./serve.sh --port 8080` to choose another port. The script requires Python 3 and works from any directory. The helper binds to localhost and disables caching while working on artwork. Press Ctrl+C to stop it.
 
 The site also works with `python3 -m http.server 8000` or any static web host. Serve the complete directory, including `src/`, `vendor/`, and `artwork/`. Python only serves files: PDF generation, image preparation, and setup storage all run in the browser. There is no build step, backend, API key, or runtime CDN dependency. Opening `index.html` directly with `file://` is not supported because the site uses JavaScript modules.
 
@@ -103,6 +103,8 @@ Infantry artwork fills its panel with 0.5 mm clearance on each edge, using the c
 For wraparound mode, keep the two broad end tongues connected to the ground sections. Cavalry strips now have straight sides with no notches; fold their end tongues over the left and right base edges. Mountain-fold at the base seam and again 3 mm farther out: the first 3 mm covers the base edge, and the remaining 7 mm tapes underneath. Foot names sit on both exposed edge bands. Fold cavalry's separate front/back name strips at both guides, place the central name band on the corresponding base edge, and tape the 3 mm flaps onto the top and underside. The previous 5 mm upright label flap has been replaced following a physical test. Verify these new wraps with your own 3 mm base before printing an army. Saved setups using `labelPlacement: 'attached'` now use wraparound geometry. An updated [US Letter test sheet](output/wraparound-test.pdf) includes square Cavalry with broad end tongues, a mounted Hero, Foot, and a Giant; print at 100% / actual size. A [first-page preview](output/wraparound-test.svg) shows the new cavalry layout.
 
 This version uses rectangular upright panels so the figure background color remains visible. It does not generate contour-cut outlines or rear-view artwork. The PDF retains 600 dpi panel images and vector solid backgrounds, 600 dpi gradient backgrounds, cut lines, fold guides, labels, and a scale ruler. Preview and PDF use the same scene geometry and colors.
+
+Default catalog names use terse title casing, generally **Faction Shortname** (for example, **Gondor Lancers**, **Gondor Militia**, and **Mordor Catapult**). Names are limited to **20 characters including spaces**, or **14 for Heroes** with smaller nameplates. Every default name is checked against the printable label width. Variant details remain in the unit descriptions. Custom names and saved unit IDs are preserved; custom names still use the existing readable-font fit check.
 
 ## Files
 
