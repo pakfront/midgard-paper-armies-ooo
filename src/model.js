@@ -41,8 +41,7 @@ export function validateSetup(input) {
   }
   number('infantryHeight', 10, 30); number('mountedHeight', 15, 30);
   number('margin', 5, 25); number('gap', 2, 10);
-  // Files saved before label placement was configurable used separate labels.
-  if (input.labelPlacement === undefined) result.labelPlacement = 'separate';
+  // Missing placement uses the same rear-band default as a new setup.
   for (const [key, values] of Object.entries({cavalryBaseDepth: [20, 30, 40], monstrosityBaseDepth: [20, 30, 40], figureBackground: ['solid', 'gradient'], labelPlacement: ['separate', 'attached', 'rear']})) {
     if (input[key] === undefined) continue;
     if (!values.includes(input[key])) throw Error(`Invalid ${key}.`);
@@ -166,8 +165,11 @@ export function layoutSetup(setup) {
   const items = catalog.flatMap(art => Array.from({length: setup.quantities[art.id]}, (_, i) => makeStrip(art, setup, i + 1)));
   const labels = items.flatMap(strip => {
     if (strip.rearDepth) {
-      return strip.art.kind === 'Mounted' ? [{kind: 'nameplate', rearGround: true, art: strip.art,
-        copy: strip.copy, name: strip.labelName, width: strip.baseWidth, height: strip.rearDepth, sections: []}] : [];
+      if (strip.art.kind !== 'Mounted') return [];
+      const rearLabel = {kind: 'nameplate', rearGround: true, art: strip.art,
+        copy: strip.copy, name: strip.labelName, width: strip.baseWidth, height: strip.rearDepth, sections: []};
+      return setup.nameplates ? [rearLabel, {kind: 'nameplate', wrap: true, edge: 'front', art: strip.art,
+        copy: strip.copy, name: strip.labelName, width: strip.baseWidth, height: 9, sections: []}] : [rearLabel];
     }
     if (!setup.nameplates) return [];
     const name = baseLabel(strip.art, setup, strip.copy);
@@ -179,5 +181,5 @@ export function layoutSetup(setup) {
     return [{kind: 'nameplate', art: strip.art, copy: strip.copy, name, width: strip.baseWidth - 2, height: 4, sections: []}];
   });
   return {...pack([...items, ...labels], setup), setup, total: items.length,
-    labelTotal: setup.nameplates ? items.length * (setup.labelPlacement === 'attached' ? 2 : 1) : 0};
+    labelTotal: setup.nameplates ? items.length * (['attached', 'rear'].includes(setup.labelPlacement) ? 2 : 1) : 0};
 }

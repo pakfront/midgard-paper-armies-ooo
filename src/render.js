@@ -154,7 +154,7 @@ export async function prepareArtwork(layout) {
         else fittedLabel(item, item.wrap ? 6 : 8);
       }
       if (item.rearBand) fittedRearLabel({...item, name: item.labelName, width: item.rearBand.width}, layout.setup);
-      if (item.wrapTabs && !item.rearDepth && item.art.kind !== 'Mounted') fittedLabel({art: item.art, copy: item.copy, name: item.labelName, width: item.baseWidth}, 6);
+      if (item.wrapTabs && layout.setup.nameplates && item.art.kind !== 'Mounted') fittedLabel({art: item.art, copy: item.copy, name: item.labelName, width: item.baseWidth}, 6);
     }
   }
   const jobs = new Map();
@@ -292,7 +292,7 @@ export function pageScene(layout, index) {
       for (const tab of strip.wrapTabs) {
         const ty = y + tab.y, front = tab.edge === 'front';
         rect(x, ty, w, tab.height, groundColor);
-        if (!strip.rearDepth && strip.art.kind !== 'Mounted') {
+        if (setup.nameplates && strip.art.kind !== 'Mounted' && (!strip.rearDepth || front)) {
           const bandY = ty + (front ? 7 : 0);
           rect(x, bandY, w, 3, '#ffffff');
           const {size, textWidth} = fittedLabel({art: strip.art, copy: strip.copy, name: strip.labelName, width: w}, 6);

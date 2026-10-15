@@ -212,7 +212,7 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['legacy']['cavalryBaseDepth'], 20)
         self.assertEqual(result['legacy']['monstrosityBaseDepth'], 20)
         self.assertEqual(result['legacy']['figureBackground'], 'solid')
-        self.assertEqual(result['legacy']['labelPlacement'], 'separate')
+        self.assertEqual(result['legacy']['labelPlacement'], 'rear')
 
     def test_middle_earth_default_battle_roles(self):
         for unit, role in {'gondor-rangers': 'Skirmishers', 'mordor-trackers': 'Skirmishers',
@@ -1254,9 +1254,11 @@ class WorkshopTests(unittest.TestCase):
             examples.push({pages:pdf.getPageCount(),expected:l.pages.length,
               labels:labels.map(p=>[p.width,p.height]),text:ops.filter(p=>p.type==='text').map(p=>p.value),
               cuts:ops.filter(p=>p.type==='line'&&p.color==='#773c85').length,
+              frontWraps:l.pages.flat().filter(p=>p.wrap).map(p=>[p.edge,p.width,p.height]),
+              frontText:l.pages.flat().filter(p=>p.rearBand).every(strip=>ops.some(op=>op.type==='text'&&op.value===strip.labelName&&op.rotation===180&&op.y>strip.y+7&&op.y<strip.y+10)),
               tongues:l.pages.flat().filter(p=>p.wrapTabs).every(strip=>strip.wrapTabs.every(tab=>{
                 const fills=ops.filter(op=>op.type==='rect'&&op.x===strip.x&&op.y===strip.y+tab.y&&op.w===tab.width&&op.h===tab.height);
-                return fills.some(op=>op.fill===groundColorFor(strip.art,s)) && !ops.some(op=>op.type==='rect'&&op.fill==='#ffffff'&&op.x===strip.x&&op.w===tab.width&&op.h===3&&op.y>=strip.y+tab.y&&op.y<strip.y+tab.y+10);
+                return fills.some(op=>op.fill===groundColorFor(strip.art,s)) && !(strip.art.kind!=='Mounted'&&tab.edge==='back'&&ops.some(op=>op.type==='rect'&&op.fill==='#ffffff'&&op.x===strip.x&&op.w===tab.width&&op.h===3&&op.y>=strip.y+tab.y&&op.y<strip.y+tab.y+10));
               })),
               rearText:l.pages.flat().filter(p=>p.rearBand).every(strip=>ops.some(op=>op.type==='text'&&op.value===strip.labelName&&
                 op.y>strip.y+strip.bodyY+strip.rearBand.y&&op.y<strip.y+strip.bodyY+strip.rearBand.y+7)),
@@ -1274,6 +1276,8 @@ class WorkshopTests(unittest.TestCase):
         for example in result['examples']:
             self.assertEqual(example['pages'], example['expected'])
             self.assertEqual(example['labels'], [[40,7],[20,7]])
+            self.assertEqual(example['frontWraps'], [['front',40,9],['front',20,9]])
+            self.assertTrue(example['frontText'])
             self.assertEqual(example['positions'], [3,13])
             self.assertTrue(example['tongues'] and example['rearText'])
             self.assertIn('Gondor Swords 2', example['text'])
