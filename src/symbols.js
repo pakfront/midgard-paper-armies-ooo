@@ -43,7 +43,7 @@ export const factionSymbols = {
 
 // Coordinates are relative to the strip body; tabs never change this placement.
 export function groundSymbol(strip, setup) {
-  if (!setup.factionSymbols || strip.kind === 'nameplate') return null;
+  if (!setup.factionSymbols || strip.kind === 'nameplate' || strip.rearDepth) return null;
   const symbol = factionSymbols[strip.art.era]?.[strip.art.faction];
   if (!symbol) return null;
   const grounds = strip.sections.filter(s => s.kind === 'ground');

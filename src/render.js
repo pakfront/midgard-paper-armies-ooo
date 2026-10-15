@@ -1,5 +1,5 @@
 import {groundColorFor} from './catalog.js';
-import {groundSymbol, symbolPolygons} from './symbols.js';
+import {groundSymbol, symbolPolygons, factionSymbols} from './symbols.js';
 
 const imageCache = new Map(), panelCache = new Map(), shadowCache = new Map();
 const DPI = 600, PX_PER_MM = DPI / 25.4;
@@ -24,7 +24,7 @@ async function sourceImage(art) {
   return imageCache.get(art.id);
 }
 
-export function panelKey(strip, variant, silhouetteColor = '#cccccc') { return `${strip.art.id}:${strip.bodyWidth ?? strip.width}:${strip.panelHeight}:${variant}${variant === 'silhouette' ? ':' + silhouetteColor : ''}`; }
+export function panelKey(strip, variant, silhouetteColor = '#cccccc') { return `${strip.art.id}:${strip.bodyWidth ?? strip.width}:${strip.panelHeight}${strip.rearDepth ? ':rear' + strip.rearDepth : ''}:${variant}${variant === 'silhouette' ? ':' + silhouetteColor : ''}`; }
 
 async function panelImage(strip, variant, silhouetteColor = '#cccccc') {
   strip = {...strip, width: strip.bodyWidth ?? strip.width};
@@ -37,14 +37,15 @@ async function panelImage(strip, variant, silhouetteColor = '#cccccc') {
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.scale(big.width / strip.width, big.height / strip.panelHeight);
     // Deeper mounted bases add padding, not larger horses or riders.
-    const artworkWidth = strip.art.kind === 'Mounted' ? Math.min(20, strip.width) : strip.width;
+    const rear = strip.art.kind === 'Mounted' ? strip.rearDepth ?? 0 : 0;
+    const artworkWidth = strip.art.kind === 'Mounted' ? Math.min(20, strip.width - rear) : strip.width;
     let dw = artworkWidth - 1, dh = strip.panelHeight - 1;
     if (strip.art.kind === 'Mounted' || strip.art.preserveAspect) {
       const ratio = Math.min(dw / source.width, dh / source.height);
       dw = source.width * ratio; dh = source.height * ratio;
     }
     ctx.drawImage(source.image, source.left, source.top, source.width, source.height,
-      (strip.width - dw) / 2, strip.panelHeight - .5 - dh, dw, dh);
+      rear ? (artworkWidth - dw) / 2 : (strip.width - dw) / 2, strip.panelHeight - .5 - dh, dw, dh);
     if (variant === 'silhouette') {
       ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = silhouetteColor;
       ctx.fillRect(0, 0, strip.width, strip.panelHeight);
@@ -127,12 +128,33 @@ function fittedLabel(strip, maxPoints = 8) {
   return {size, textWidth: labelFont.widthOfTextAtSize(strip.name, size * point) / point};
 }
 
+function fittedRearLabel(item, setup) {
+  const symbol = setup.factionSymbols ? factionSymbols[item.art.era]?.[item.art.faction] : null;
+  const symbolSize = symbol ? 4.8 : 0, inset = symbol ? symbolSize + 1.2 : 0;
+  if (!item.name) return {symbol, symbolSize, inset, lines: [], size: 0};
+  const available = item.width - inset;
+  const candidates = [[item.name]];
+  for (let i = 0; i < item.name.length; i++) if (item.name[i] === ' ')
+    candidates.push([item.name.slice(0, i), item.name.slice(i + 1)]);
+  for (const lines of candidates) {
+    try {
+      const size = Math.min(...lines.map(name => fittedLabel({...item, name, width: available}, 8).size));
+      return {symbol, symbolSize, inset, lines, size};
+    } catch { /* Try two lines before reporting a name that cannot fit. */ }
+  }
+  throw Error(`${item.art.name} base ${item.copy}: shorten the rear ground label (minimum 6 pt).`);
+}
+
 export async function prepareArtwork(layout) {
   if (layout.setup.nameplates) {
     await prepareLabelFont();
     for (const item of layout.pages.flat()) {
-      if (item.kind === 'nameplate') fittedLabel(item, item.wrap ? 6 : 8);
-      if (item.wrapTabs && item.art.kind !== 'Mounted') fittedLabel({art: item.art, copy: item.copy, name: item.labelName, width: item.baseWidth}, 6);
+      if (item.kind === 'nameplate') {
+        if (item.rearGround) fittedRearLabel(item, layout.setup);
+        else fittedLabel(item, item.wrap ? 6 : 8);
+      }
+      if (item.rearBand) fittedRearLabel({...item, name: item.labelName, width: item.rearBand.width}, layout.setup);
+      if (item.wrapTabs && !item.rearDepth && item.art.kind !== 'Mounted') fittedLabel({art: item.art, copy: item.copy, name: item.labelName, width: item.baseWidth}, 6);
     }
   }
   const jobs = new Map();
@@ -186,10 +208,29 @@ export function pageScene(layout, index) {
   rect(0, 0, width, height, '#ffffff');
   text(`PAPER ARMY STANDEES / Foot 40 x 20 mm; cavalry 40 x ${setup.cavalryBaseDepth} mm; monsters 40 x ${setup.monstrosityBaseDepth} mm; heroes 20 x 20 mm`, margin, margin + 2, 2.7);
   text('Print at 100% / actual size. Cut solid outlines; fold dashed crests and dotted feet.', margin, margin + 6, 2);
+  if (layout.pages[index].some(s => s.postFoldCuts))
+    text('PURPLE: trim doubled cavalry panels AFTER folding, before mounting. Keep ground feet intact.', margin, margin + 9, 1.8, '#773c85');
+  const rearLabel = (item, bx, by, bw, bh, color) => {
+    const fit = fittedRearLabel({...item, width: bw}, setup);
+    rect(bx, by, bw, bh, color);
+    if (fit.symbol) ops.push(...symbolPolygons({symbol: fit.symbol, size: fit.symbolSize, rotation: 0},
+      bx + .6, by + (bh - fit.symbolSize) / 2, contrast(color), color));
+    fit.lines.forEach((value, i) => {
+      const textWidth = labelFont.widthOfTextAtSize(value, fit.size * 72 / 25.4) / (72 / 25.4);
+      text(value, bx + fit.inset + (bw - fit.inset - textWidth) / 2,
+        by + bh / 2 + (i - (fit.lines.length - 1) / 2) * fit.size * 1.2 + fit.size * .35,
+        fit.size, contrast(color));
+    });
+  };
   for (const strip of layout.pages[index]) {
     const groundColor = groundColorFor(strip.art, setup);
     const {x: netX, y, sections} = strip, x = netX + (strip.bodyX || 0), w = strip.bodyWidth ?? strip.width;
     text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? strip.wrap ? ' / ' + strip.edge + ' label' : ' / label' : ''}`, netX, strip.captionY, w === 20 ? 1.7 : 2);
+    if (strip.kind === 'nameplate' && strip.rearGround) {
+      rearLabel(strip, x, y, w, strip.height, groundColor);
+      rect(x, y, w, strip.height, null, '#59645c');
+      continue;
+    }
     if (strip.kind === 'nameplate') {
       const {size, textWidth} = fittedLabel(strip, strip.wrap ? 6 : 8);
       rect(x, y, w, strip.height, '#ffffff', '#59645c');
@@ -217,6 +258,10 @@ export function pageScene(layout, index) {
         ops.push({type: 'image', key: panelKey(strip, section.variant, setup.silhouetteColor), x, y: sy, w, h: section.height});
       }
     }
+    if (strip.rearBand) {
+      const b = strip.rearBand;
+      rearLabel({...strip, name: strip.labelName}, x + b.x, y + (strip.bodyY || 0) + b.y, b.width, b.height, groundColor);
+    }
     const mark = groundSymbol(strip, setup);
     if (mark) {
       const mx = x + mark.x, my = y + (strip.bodyY || 0) + mark.y;
@@ -230,6 +275,13 @@ export function pageScene(layout, index) {
       line(x, y + (strip.bodyY || 0) + fold.y, x + w, y + (strip.bodyY || 0) + fold.y, '#ffffff', .35, mountain ? [1.2, .8] : [.3, .6]);
       line(x, y + (strip.bodyY || 0) + fold.y, x + w, y + (strip.bodyY || 0) + fold.y, mountain ? '#8f6333' : '#517e94', .15, mountain ? [1.2, .8] : [.3, .6]);
     }
+    for (const cut of strip.postFoldCuts ?? []) {
+      const cx = x + cut.x, cy = y + (strip.bodyY || 0) + cut.y;
+      // These cuts are assembly instructions, so remain visible when fold guides are off.
+      line(cx + cut.width, cy, cx + cut.width, cy + cut.height, '#773c85', .25, [1.5, .7]);
+      line(cx, cy, cx + cut.width, cy, '#773c85', .25, [1.5, .7]);
+      line(cx, cy + cut.height, cx + cut.width, cy + cut.height, '#773c85', .25, [1.5, .7]);
+    }
     if (!strip.wrapTabs) rect(x, y, w, strip.height, null, '#59645c');
     else {
       const guide = (ax, ay, bx, by) => {
@@ -240,7 +292,7 @@ export function pageScene(layout, index) {
       for (const tab of strip.wrapTabs) {
         const ty = y + tab.y, front = tab.edge === 'front';
         rect(x, ty, w, tab.height, groundColor);
-        if (strip.art.kind !== 'Mounted') {
+        if (!strip.rearDepth && strip.art.kind !== 'Mounted') {
           const bandY = ty + (front ? 7 : 0);
           rect(x, bandY, w, 3, '#ffffff');
           const {size, textWidth} = fittedLabel({art: strip.art, copy: strip.copy, name: strip.labelName, width: w}, 6);

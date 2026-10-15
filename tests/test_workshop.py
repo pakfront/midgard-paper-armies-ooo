@@ -59,7 +59,7 @@ class WorkshopTests(unittest.TestCase):
           // share a column beside this tall piece.
           const example=pack([{name:'Tall',width:60,height:200},
             {name:'Short A',width:120,height:90},{name:'Short B',width:120,height:90}]);
-          const mixed=layoutSetup({...defaultSetup(),nameplates:true,cavalryBaseDepth:40,
+          const mixed=layoutSetup({...defaultSetup(),labelPlacement:'separate',nameplates:true,cavalryBaseDepth:40,
             quantities:{'gondor-horse':8,'gondor-swords':12,'orc-troll':4,'rohan-eowyn':4}});
           let seed=731;
           const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
@@ -679,7 +679,7 @@ class WorkshopTests(unittest.TestCase):
               resolve({clear, solid});
             }; img.onerror = reject; img.src = a.path;
           })));
-          const setup = {...defaultSetup(), riders: 2, nameplates: true};
+          const setup = {...defaultSetup(),labelPlacement:'separate', riders: 2, nameplates: true};
           setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
           const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
           const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
@@ -792,7 +792,7 @@ class WorkshopTests(unittest.TestCase):
           const {catalog} = await import('./src/catalog.js');
           const {defaultSetup, layoutSetup} = await import('./src/model.js');
           const {prepareArtwork, createPDF} = await import('./src/render.js');
-          const setup = {...defaultSetup(), ranks: 3, riders: 2, nameplates: true};
+          const setup = {...defaultSetup(),labelPlacement:'separate', ranks: 3, riders: 2, nameplates: true};
           setup.names = {'rohan-foot-captain': 'Rohan captain', 'mordor-banner-bearer': 'Mordor herald',
             'gondor-foot-captain': 'Gondor captain', 'gondor-aragorn-foot': 'Aragorn'};
           setup.quantities = Object.fromEntries(catalog.map(a => [a.id, ids.includes(a.id) ? 1 : 0]));
@@ -856,7 +856,7 @@ class WorkshopTests(unittest.TestCase):
           const {prepareArtwork, createPDF} = await import('./src/render.js');
           const art = catalog.find(a=>a.id==='orc-troll'), setup = defaultSetup();
           setup.quantities = Object.fromEntries(catalog.map(a=>[a.id,a===art?1:0]));
-          setup.nameplates = true;
+          setup.nameplates = true; setup.labelPlacement = 'separate';
           const strips = [1,2,4].flatMap(ranks=>[10,14.5,30].map(infantryHeight=>{
             const s=makeStrip(art,{...setup,ranks,infantryHeight});
             return {base:[s.baseWidth,s.baseDepth],width:s.width,height:s.height,count:s.count,
@@ -888,7 +888,7 @@ class WorkshopTests(unittest.TestCase):
           const {prepareArtwork, createPDF} = await import('./src/render.js');
           const art = catalog.find(a=>a.id==='orc-monstrosities'), setup = defaultSetup();
           setup.quantities = Object.fromEntries(catalog.map(a=>[a.id,a===art?1:0]));
-          setup.nameplates = true;
+          setup.nameplates = true; setup.labelPlacement = 'separate';
           const strips = [1,2,4].flatMap(ranks=>[10,14.5,30].map(infantryHeight=>{
             const s=makeStrip(art,{...setup,ranks,infantryHeight});
             return {base:[s.baseWidth,s.baseDepth],width:s.width,height:s.height,count:s.count,
@@ -920,7 +920,7 @@ class WorkshopTests(unittest.TestCase):
           const {prepareArtwork, createPDF} = await import('./src/render.js');
           const art = catalog.find(a=>a.id==='orc-ogres'), setup = defaultSetup();
           setup.quantities = Object.fromEntries(catalog.map(a=>[a.id,a===art?1:0]));
-          setup.nameplates = true;
+          setup.nameplates = true; setup.labelPlacement = 'separate';
           const strips = [1,2,4].flatMap(ranks=>[10,14.5,30].map(infantryHeight=>{
             const s=makeStrip(art,{...setup,ranks,infantryHeight});
             return {base:[s.baseWidth,s.baseDepth],width:s.width,height:s.height,count:s.count,
@@ -954,7 +954,7 @@ class WorkshopTests(unittest.TestCase):
           const {prepareArtwork, createPDF} = await import('./src/render.js');
           const art = catalog.find(a=>a.id==='rohan-eowyn'), setup=defaultSetup();
           setup.quantities=Object.fromEntries(catalog.map(a=>[a.id,a===art?1:0]));
-          setup.nameplates=true;
+          setup.nameplates=true; setup.labelPlacement='separate';
           const strips=[2,3,4].map(riders=>makeStrip(art,{...setup,riders}));
           const layout=layoutSetup(setup), assets=await prepareArtwork(layout);
           const pdf=await createPDF(layout,assets);
@@ -1122,7 +1122,7 @@ class WorkshopTests(unittest.TestCase):
               checks.push(bounded && location && !!mark === expected);
             }
           }
-          const s = {...defaultSetup(), factionSymbols:true, fakeShadows:true};
+          const s = {...defaultSetup(),labelPlacement:'separate', factionSymbols:true, fakeShadows:true};
           const ids = ['gondor-swords','rohan-outriders','orc-troll','rohan-eowyn'];
           s.quantities = Object.fromEntries(catalog.map(a=>[a.id,ids.includes(a.id)?1:0]));
           const l=layoutSetup(s), assets=await prepareArtwork(l);
@@ -1197,6 +1197,91 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['legacy'], [False,False])
         self.assertTrue(all(result['rejected']))
         self.assertEqual(result['pages'], result['expected'])
+
+    def test_rear_ground_band_geometry_artwork_labels_and_pdf(self):
+        expect(self.page.locator('#label-placement')).to_have_value('rear')
+        self.page.locator('#nameplates').check()
+        self.page.locator('#number-bases').check()
+        self.page.locator('#faction-symbols').check()
+        self.page.locator('#label-placement').select_option('rear')
+        self.ready()
+        expect(self.page.locator('#fold-description')).to_contain_text('7 mm')
+        with self.page.expect_download() as saved:
+            self.page.locator('#save').click()
+        payload = Path(saved.value.path()).read_bytes()
+        self.page.locator('#label-placement').select_option('separate')
+        self.page.locator('#load-file').set_input_files({'name':'rear.json','mimeType':'application/json','buffer':payload})
+        self.ready()
+        self.page.reload()
+        self.ready()
+        expect(self.page.locator('#label-placement')).to_have_value('rear')
+        result = self.page.evaluate('''async () => {
+          const {catalog,groundColorFor}=await import('./src/catalog.js');
+          const {defaultSetup,makeStrip,layoutSetup}=await import('./src/model.js');
+          const {prepareArtwork,createPDF,pageScene,panelKey}=await import('./src/render.js');
+          const base={...defaultSetup(),labelPlacement:'rear',nameplates:true,numberBases:true,factionSymbols:true,fakeShadows:true};
+          const checks=[];
+          for(const depth of [20,30,40]) for(const ranks of [1,2,3,4]) for(const riders of [2,3,4]) {
+            const s={...base,cavalryBaseDepth:depth,monstrosityBaseDepth:depth,ranks,skirmisherRanks:ranks,riders,lightRiders:riders};
+            for(const art of catalog) {
+              const strip=makeStrip(art,s), ground=strip.sections.filter(p=>p.kind==='ground');
+              checks.push(Math.abs(ground.reduce((n,p)=>n+p.height,0)-strip.span)<1e-7 &&
+                strip.sections.every(p=>p.height>0) && strip.rearDepth===7 && strip.wrapTabs.length===2 && strip.bodyY===10 &&
+                strip.height===strip.bodyHeight+20 && strip.wrapTabs.every(t=>t.height===10&&t.width===strip.bodyWidth) &&
+                strip.uprightPositions.every((v,i,a)=>v>0&&v<strip.span&&(!i||v>a[i-1])) &&
+                (art.kind==='Mounted' ? strip.postFoldCuts.length===strip.count&&strip.postFoldCuts.every(c=>
+                  c.x===0&&c.width===7) : ground.at(-1).height>=7));
+            }
+          }
+          const ids=['gondor-swords','gondor-rangers','gondor-horse','rohan-eowyn','orc-troll'];
+          const examples=[],bounds=[];
+          for(const depth of [20,30,40]) {
+            const s={...base,cavalryBaseDepth:depth,monstrosityBaseDepth:depth};
+            s.quantities=Object.fromEntries(catalog.map(a=>[a.id,ids.includes(a.id)?(a.id==='gondor-swords'?2:1):0]));
+            const l=layoutSetup(s),assets=await prepareArtwork(l),ops=l.pages.flatMap((_,i)=>pageScene(l,i));
+            const pdf=await PDFLib.PDFDocument.load(await createPDF(l,assets));
+            const strip=l.pages.flat().find(p=>p.art.id==='gondor-horse'&&p.kind!=='nameplate');
+            const key=panelKey(strip,'front'),image=new Image();image.src=assets.get(key).url;await image.decode();
+            const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+            const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);
+            const pixels=ctx.getImageData(0,0,image.width,image.height).data;
+            let min=image.width,max=-1,rearAlpha=false;
+            for(let y=0;y<image.height;y++)for(let x=0;x<image.width;x++)if(pixels[(y*image.width+x)*4+3]>8){
+              min=Math.min(min,x);max=Math.max(max,x);if(x/image.width*depth<=7)rearAlpha=true;
+            }
+            bounds.push({width:(max-min+1)/image.width*depth,rearAlpha,key});
+            const labels=l.pages.flat().filter(p=>p.rearGround);
+            examples.push({pages:pdf.getPageCount(),expected:l.pages.length,
+              labels:labels.map(p=>[p.width,p.height]),text:ops.filter(p=>p.type==='text').map(p=>p.value),
+              cuts:ops.filter(p=>p.type==='line'&&p.color==='#773c85').length,
+              tongues:l.pages.flat().filter(p=>p.wrapTabs).every(strip=>strip.wrapTabs.every(tab=>{
+                const fills=ops.filter(op=>op.type==='rect'&&op.x===strip.x&&op.y===strip.y+tab.y&&op.w===tab.width&&op.h===tab.height);
+                return fills.some(op=>op.fill===groundColorFor(strip.art,s)) && !ops.some(op=>op.type==='rect'&&op.fill==='#ffffff'&&op.x===strip.x&&op.w===tab.width&&op.h===3&&op.y>=strip.y+tab.y&&op.y<strip.y+tab.y+10);
+              })),
+              rearText:l.pages.flat().filter(p=>p.rearBand).every(strip=>ops.some(op=>op.type==='text'&&op.value===strip.labelName&&
+                op.y>strip.y+strip.bodyY+strip.rearBand.y&&op.y<strip.y+strip.bodyY+strip.rearBand.y+7)),
+              positions:makeStrip(catalog.find(a=>a.id==='gondor-swords'),s).uprightPositions});
+          }
+          const symbolOnly={...base,nameplates:false};
+          const l=layoutSetup(symbolOnly),assets=await prepareArtwork(l);
+          const noNames=l.pages.every((_,i)=>!pageScene(l,i).some(o=>o.type==='text'&&o.value==='Gondor Swords'));
+          const off=makeStrip(catalog.find(a=>a.id==='gondor-horse'),{...base,nameplates:false,factionSymbols:false});
+          const noGuides=layoutSetup({...base,guides:false});
+          return {checks:checks.every(Boolean),examples,bounds,noNames,off:!off.rearDepth,
+            cutsWithoutGuides:noGuides.pages.some((_,i)=>pageScene(noGuides,i).some(o=>o.color==='#773c85'&&o.type==='line'))};
+        }''')
+        self.assertTrue(result['checks'] and result['noNames'] and result['off'] and result['cutsWithoutGuides'])
+        for example in result['examples']:
+            self.assertEqual(example['pages'], example['expected'])
+            self.assertEqual(example['labels'], [[40,7],[20,7]])
+            self.assertEqual(example['positions'], [3,13])
+            self.assertTrue(example['tongues'] and example['rearText'])
+            self.assertIn('Gondor Swords 2', example['text'])
+            self.assertGreater(example['cuts'], 0)
+        self.assertTrue(all(not b['rearAlpha'] for b in result['bounds']))
+        self.assertLess(result['bounds'][0]['width'], 13)
+        self.assertAlmostEqual(result['bounds'][1]['width'], result['bounds'][2]['width'], delta=.1)
+        self.assertNotEqual(result['bounds'][0]['key'], result['bounds'][1]['key'])
 
     def test_setup_colors_round_trip_and_blank_backs(self):
         self.page.locator('#ground-color-mode').select_option('setup')
@@ -1449,6 +1534,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_nameplates_names_storage_pdf_and_readability(self):
         self.page.locator('#nameplates').check()
+        self.page.locator('#label-placement').select_option('separate')
         self.page.locator('#qty-gondor-swords').fill('2')
         self.page.locator('#name-gondor-swords').fill('Éowyn & Guard')
         self.page.locator('[data-art="gondor-swords"] summary').click()
