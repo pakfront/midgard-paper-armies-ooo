@@ -494,7 +494,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_era_and_faction_filters_preserve_selected_bases(self):
         eras = self.page.evaluate("async () => (await import('./src/catalog.js')).catalog.map(a => a.era)")
-        self.assertEqual(set(eras), {'middle-earth-third-age', 'american-civil-war'})
+        self.assertEqual(set(eras), {'middle-earth-third-age', 'american-civil-war', 'napoleonic'})
         expect(self.page.locator('#era')).to_have_value('middle-earth-third-age')
         # Simulate a future era to exercise filtering across classifications.
         source = (ROOT / 'src/catalog.js').read_text() + """
@@ -531,6 +531,30 @@ class WorkshopTests(unittest.TestCase):
           const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
           const {prepareArtwork, createPDF} = await import('./src/render.js');
           const arts = catalog.filter(a => ['acw-csa-infantry','acw-usa-infantry'].includes(a.id));
+          const setup = defaultSetup();
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
+          const layout = layoutSetup(setup), assets = await prepareArtwork(layout);
+          return {pdf: (await createPDF(layout, assets)).length, assets: assets.size,
+            strips: arts.map(a => {const s = makeStrip(a, setup);
+              return [s.baseWidth, s.baseDepth, s.count, s.width, s.panelHeight];})};
+        }""")
+        self.assertGreater(result['pdf'], 1000)
+        self.assertEqual(result['assets'], 4)
+        self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
+
+    def test_napoleonic_infantry_load_and_export(self):
+        self.page.locator('#era').select_option('napoleonic')
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 2)
+        self.page.locator('[data-filter="French"]').click()
+        self.assertEqual(self.page.locator('.art-card:visible').count(), 1)
+        expect(self.page.locator('[data-art="napoleonic-french-line"]')).to_be_visible()
+        self.page.locator('[data-filter="Spanish"]').click()
+        expect(self.page.locator('[data-art="napoleonic-spanish-line"]')).to_be_visible()
+        result = self.page.evaluate("""async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup, makeStrip} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const arts = catalog.filter(a => ['napoleonic-french-line','napoleonic-spanish-line'].includes(a.id));
           const setup = defaultSetup();
           setup.quantities = Object.fromEntries(catalog.map(a => [a.id, arts.includes(a) ? 1 : 0]));
           const layout = layoutSetup(setup), assets = await prepareArtwork(layout);

@@ -1,6 +1,7 @@
 export const eras = [
   {id: 'middle-earth-third-age', name: 'Middle-earth · Third Age'},
   {id: 'american-civil-war', name: 'American Civil War'},
+  {id: 'napoleonic', name: 'Napoleonic Wars'},
 ];
 
 // Colors only need to be distinct among factions in the same era.
@@ -104,6 +105,8 @@ export const catalog = [
   {id: 'acw-usa-artillery', name: 'USA Artillery', era: 'american-civil-war', faction: 'USA', kind: 'Monster', baseWidth: 40, baseDepth: 20, uprightCount: 1, panelHeight: 23, preserveAspect: true, file: 'usa-field-artillery.png', note: 'Field gun with two crew · 23 mm upright · 40 × 20 mm base'},
   {id: 'acw-csa-leader', name: 'CSA General', era: 'american-civil-war', faction: 'CSA', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'csa-leader-profile.png', note: 'Mounted leader · one upright · 20 × 20 mm'},
   {id: 'acw-usa-leader', name: 'USA General', era: 'american-civil-war', faction: 'USA', kind: 'Mounted', hero: true, baseWidth: 20, baseDepth: 20, file: 'usa-leader-profile.png', note: 'Mounted leader · one upright · 20 × 20 mm'},
+  {id: 'napoleonic-french-line', name: 'French Line', era: 'napoleonic', faction: 'French', kind: 'Infantry', height: 13.5, file: 'french-line-infantry.png', note: 'Clean print style · eight line infantry · blue coats and shakos · 40 × 20 mm'},
+  {id: 'napoleonic-spanish-line', name: 'Spanish Line', era: 'napoleonic', faction: 'Spanish', kind: 'Infantry', height: 13.5, file: 'spanish-line-infantry.png', note: 'Clean print style · eight line infantry · white coats and bicornes · 40 × 20 mm'},
 ].map(art => {
   const limit = art.hero ? HERO_NAME_LIMIT : DEFAULT_NAME_LIMIT;
   if (art.name.length > limit) throw Error(`${art.id}: default name exceeds ${limit} characters.`);
