@@ -7,11 +7,11 @@ export function unitTypeOptions(art) {
 }
 
 export function defaultSetup() {
-  return {version: 1, nameplates: false, names: {}, copyNames: {},
-    unitTypes: Object.fromEntries(catalog.filter(a => unitTypeOptions(a).length).map(a => [a.id, unitTypeOptions(a)[0]])),
+  return {version: 1, nameplates: false, numberBases: false, factionSymbols: false, names: {}, copyNames: {},
+    unitTypes: Object.fromEntries(catalog.filter(a => unitTypeOptions(a).length).map(a => [a.id, a.defaultUnitType ?? unitTypeOptions(a)[0]])),
     ranks: 2, skirmisherRanks: 1, riders: 4, lightRiders: 3, reverse: 'silhouette', infantryHeight: 14.5, mountedHeight: 21,
     cavalryBaseDepth: 20, monstrosityBaseDepth: 20, fakeShadows: false, figureBackground: 'solid', gradientBottom: '#456b94', gradientTop: '#eef7ff', labelPlacement: 'separate',
-    groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'letter', orientation: 'portrait', margin: 10, gap: 4, guides: true,
+    groundColorMode: 'faction', groundColor: '#b6bc91', figureColor: '#ffffff', silhouetteColor: '#cccccc', paper: 'letter', orientation: 'portrait', margin: 10, gap: 4, guides: true,
     quantities: Object.fromEntries(catalog.map(art => [art.id, ['gondor-swords', 'gondor-horse', 'orc-axes', 'orc-wargs'].includes(art.id) ? 1 : 0]))};
 }
 
@@ -26,12 +26,16 @@ export function validateSetup(input) {
   number('ranks', 1, 4, true); number('riders', 2, 4, true);
   if (input.skirmisherRanks !== undefined) number('skirmisherRanks', 1, 4, true);
   if (input.lightRiders !== undefined) number('lightRiders', 2, 4, true);
+  // Preserve the single ground color in setups saved before faction palettes.
+  result.groundColorMode = input.groundColorMode === undefined ? 'setup' : input.groundColorMode;
+  if (!['faction', 'setup'].includes(result.groundColorMode)) throw Error('Invalid ground color mode.');
   const unitTypes = input.unitTypes ?? {};
   if (typeof unitTypes !== 'object' || Array.isArray(unitTypes) || input.unitTypes === null) throw Error('Invalid unit types.');
   for (const art of catalog) {
     const options = unitTypeOptions(art);
     if (!options.length) continue;
-    const type = unitTypes[art.id] ?? options[0];
+    // Setups predating battle roles retain their original formations.
+    const type = unitTypes[art.id] ?? (input.unitTypes === undefined ? options[0] : art.defaultUnitType ?? options[0]);
     if (!options.includes(type)) throw Error(`${art.name}: invalid unit type.`);
     result.unitTypes[art.id] = type;
   }
@@ -58,6 +62,10 @@ export function validateSetup(input) {
   if (!input.quantities || typeof input.quantities !== 'object' || Array.isArray(input.quantities)) throw Error('Missing unit quantities.');
   if (input.nameplates !== undefined && typeof input.nameplates !== 'boolean') throw Error('Invalid nameplate setting.');
   result.nameplates = input.nameplates ?? false;
+  for (const key of ['numberBases', 'factionSymbols']) {
+    if (input[key] !== undefined && typeof input[key] !== 'boolean') throw Error(`Invalid ${key} setting.`);
+    result[key] = input[key] ?? false;
+  }
   for (const key of ['names', 'copyNames']) {
     const values = input[key] ?? {};
     if (!values || typeof values !== 'object' || Array.isArray(values)) throw Error(`Invalid ${key}.`);
@@ -83,6 +91,14 @@ export function validateSetup(input) {
   }
   if (total > 100) throw Error('Use at most 100 bases per setup.');
   return result;
+}
+
+// Explicit per-base names replace the entire automatic name, including its number.
+export function baseLabel(art, setup, copy = 1) {
+  const custom = setup.copyNames?.[art.id]?.[copy - 1];
+  if (custom) return custom;
+  const name = setup.names?.[art.id] || art.name;
+  return setup.numberBases && !art.hero && setup.quantities[art.id] > 1 ? `${name} ${copy}` : name;
 }
 
 // The unfolded strip is: half foot, [front, back, full foot]..., half foot.
@@ -114,7 +130,7 @@ export function makeStrip(art, setup, copy = 1) {
   }
   const strip = {art, copy, name: art.name, unitType, baseWidth, baseDepth, width, height: y, bodyWidth: width, bodyHeight: y, count, span, panelHeight, pitch, sections, folds};
   if (setup.nameplates && setup.labelPlacement === 'attached') {
-    strip.labelName = setup.copyNames?.[art.id]?.[copy - 1] || setup.names?.[art.id] || art.name;
+    strip.labelName = baseLabel(art, setup, copy);
     strip.bodyY = 10;
     strip.bodyX = 0;
     // Broad end tongues wrap over the base edges along the strip's main axis.
@@ -130,7 +146,7 @@ export function layoutSetup(setup) {
   setup = validateSetup(setup);
   const items = catalog.flatMap(art => Array.from({length: setup.quantities[art.id]}, (_, i) => makeStrip(art, setup, i + 1)));
   const labels = setup.nameplates ? items.flatMap(strip => {
-    const name = setup.copyNames[strip.art.id]?.[strip.copy - 1] || setup.names[strip.art.id] || strip.art.name;
+    const name = baseLabel(strip.art, setup, strip.copy);
     if (setup.labelPlacement === 'attached') {
       if (strip.art.kind !== 'Mounted') return [];
       return ['front', 'back'].map(edge => ({kind: 'nameplate', wrap: true, edge, art: strip.art, copy: strip.copy,

@@ -214,6 +214,34 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['legacy']['figureBackground'], 'solid')
         self.assertEqual(result['legacy']['labelPlacement'], 'separate')
 
+    def test_middle_earth_default_battle_roles(self):
+        for unit, role in {'gondor-rangers': 'Skirmishers', 'mordor-trackers': 'Skirmishers',
+                           'isengard-dunlending-javelinmen': 'Skirmishers',
+                           'rohan-outriders': 'Light Riders', 'harad-cavalry': 'Light Riders',
+                           'orc-warg-archers': 'Light Riders', 'goblin-spears': 'Warriors',
+                           'gondor-archers': 'Warriors', 'isengard-uruk-crossbows': 'Warriors',
+                           'rohan-guard': 'Heavy Riders', 'isengard-warg-riders': 'Heavy Riders'}.items():
+            expect(self.page.locator(f'#type-{unit}')).to_have_value(role)
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, validateSetup, unitTypeOptions, makeStrip} = await import('./src/model.js');
+          const setup = defaultSetup();
+          const complete = catalog.filter(a => a.era === 'middle-earth-third-age' && unitTypeOptions(a).length)
+            .every(a => unitTypeOptions(a).includes(a.defaultUnitType));
+          setup.unitTypes['gondor-rangers'] = 'Warriors';
+          delete setup.unitTypes['rohan-outriders'];
+          const restored = validateSetup(setup);
+          const ranger = catalog.find(a => a.id === 'gondor-rangers');
+          const outrider = catalog.find(a => a.id === 'rohan-outriders');
+          return {complete, ranger: restored.unitTypes[ranger.id],
+            outrider: restored.unitTypes[outrider.id],
+            counts: [makeStrip(ranger, defaultSetup()).count, makeStrip(outrider, restored).count]};
+        }''')
+        self.assertTrue(result['complete'])
+        self.assertEqual(result['ranger'], 'Warriors')
+        self.assertEqual(result['outrider'], 'Light Riders')
+        self.assertEqual(result['counts'], [1, 3])
+
     def test_per_unit_battle_roles_formations_persistence_and_pdf(self):
         expect(self.page.locator('#ranks')).to_have_value('2')
         expect(self.page.locator('#skirmisher-ranks')).to_have_value('1')
@@ -414,7 +442,7 @@ class WorkshopTests(unittest.TestCase):
           const {prepareArtwork,pageScene,createPDF}=await import('./src/render.js');
           const results=[];
           for(const depth of [20,30,40]) for(const paper of ['letter','a4']) for(const orientation of ['portrait','landscape']) {
-            const s={...defaultSetup(),cavalryBaseDepth:depth,paper,orientation,riders:2,nameplates:true,labelPlacement:'attached',
+            const s={...defaultSetup(),cavalryBaseDepth:depth,paper,orientation,riders:2,lightRiders:2,nameplates:true,labelPlacement:'attached',
               names:{...Object.fromEntries(catalog.filter(a=>a.hero).map(a=>[a.id,'Hero'])),'gondor-swords':'Guard'},copyNames:{'gondor-swords':['First Guard']},
               quantities:Object.fromEntries(catalog.map(a=>[a.id,1]))};
             const l=layoutSetup(s),assets=await prepareArtwork(l),ops=l.pages.flatMap((_,i)=>pageScene(l,i));
@@ -633,7 +661,7 @@ class WorkshopTests(unittest.TestCase):
           const bytes = await createPDF(layout, assets), pdf = await PDFLib.PDFDocument.load(bytes);
           const mounted = arts.find(a => a.kind === 'Mounted');
           const spacing = [2, 4].map(riders => {
-            const s = makeStrip(mounted, {...setup, riders}); return [s.count, s.pitch];
+            const s = makeStrip(mounted, {...setup, lightRiders: riders}); return [s.count, s.pitch];
           });
           return {images, total: layout.total, assets: assets.size, pdf: bytes.length, spacing,
             pages: pdf.getPageCount(), expected: layout.pages.length,
@@ -649,10 +677,10 @@ class WorkshopTests(unittest.TestCase):
         for image in result['images']:
             self.assertGreater(image['clear'], 0)
             self.assertGreater(image['solid'], 0)
-        for strip in result['strips']:
+        for strip, count in zip(result['strips'], [1, 1, 3, 1]):
             self.assertEqual(strip['base'], [40, 20])
-            self.assertEqual(strip['count'], 2)
-            self.assertEqual(strip['backs'], ['mirror' if strip['kind'] == 'Mounted' else 'silhouette'] * 2)
+            self.assertEqual(strip['count'], count)
+            self.assertEqual(strip['backs'], ['mirror' if strip['kind'] == 'Mounted' else 'silhouette'] * count)
 
     def test_goblin_faction_light_troops_load_and_export(self):
         self.page.locator('[data-filter="Goblins"]').click()
@@ -697,10 +725,10 @@ class WorkshopTests(unittest.TestCase):
         for image in result['images']:
             self.assertGreater(image['clear'], 0)
             self.assertGreater(image['solid'], 0)
-        for strip in result['strips']:
+        for strip, count in zip(result['strips'], [1, 2, 3]):
             self.assertEqual(strip['base'], [40, 20])
-            self.assertEqual(strip['count'], 2)
-            self.assertEqual(strip['backs'], ['mirror' if strip['kind'] == 'Mounted' else 'silhouette'] * 2)
+            self.assertEqual(strip['count'], count)
+            self.assertEqual(strip['backs'], ['mirror' if strip['kind'] == 'Mounted' else 'silhouette'] * count)
 
     def test_gondor_light_units_load_and_export(self):
         self.page.locator('[data-filter="Gondor"]').click()
@@ -729,7 +757,7 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(result['assets'], 4)
         self.assertGreater(result['pdf'], 1000)
         self.assertEqual(result['pages'], result['expected'])
-        self.assertEqual(result['strips'], [[40, 20, 2, 14.5]] * 2)
+        self.assertEqual(result['strips'], [[40, 20, 2, 14.5], [40, 20, 1, 14.5]])
 
     def test_middle_earth_expansion_artwork_and_foot_heroes_export(self):
         ids = ['isengard-warg-riders', 'rohan-foot-captain', 'mordor-spearmen',
@@ -766,7 +794,7 @@ class WorkshopTests(unittest.TestCase):
                 self.assertTrue(strip['preserve'])
                 self.assertEqual(strip['panel'], 35 if strip['id'] == 'mordor-cave-troll' else 23)
             else:
-                self.assertEqual(strip['count'], 2 if strip['kind'] == 'Mounted' else 3)
+                self.assertEqual(strip['count'], (3 if strip['id'] == 'harad-cavalry' else 2) if strip['kind'] == 'Mounted' else 3)
         self.assertEqual(result['labels'].count([18, 4]), 5)
 
     def test_flat_feet_geometry_and_perpendicular_axes(self):
@@ -1001,7 +1029,153 @@ class WorkshopTests(unittest.TestCase):
                                    a['y'] - 4 < b['y'] + b['h'] and b['y'] - 4 < a['y'] + a['h'])
                         self.assertFalse(overlap)
 
+    def test_faction_ground_colors_preview_pdf_and_persistence(self):
+        expect(self.page.locator('#ground-color-mode')).to_have_value('faction')
+        expect(self.page.locator('#ground-color')).to_be_disabled()
+        self.assertEqual(self.page.locator('#faction-filters .faction-swatch').count(), 7)
+        result = self.page.evaluate('''async () => {
+          const {catalog, factionGroundColors, groundColorFor} = await import('./src/catalog.js');
+          const {defaultSetup, validateSetup, layoutSetup} = await import('./src/model.js');
+          const {pageScene, prepareArtwork, createPDF, previewSVG} = await import('./src/render.js');
+          const coverage = catalog.every(a => /^#[0-9a-f]{6}$/.test(factionGroundColors[a.era]?.[a.faction]?.color));
+          const unique = Object.values(factionGroundColors).every(p => {
+            const colors = Object.values(p).map(v => v.color); return new Set(colors).size === colors.length;
+          });
+          const s = {...defaultSetup(), nameplates: true, labelPlacement: 'attached', riders: 2, lightRiders: 2};
+          const ids = ['gondor-swords', 'rohan-outriders', 'orc-troll'];
+          s.quantities = Object.fromEntries(catalog.map(a => [a.id, ids.includes(a.id) ? 1 : 0]));
+          const l = layoutSetup(s), assets = await prepareArtwork(l);
+          const allColors = ids.every(id => {
+            const art = catalog.find(a => a.id === id), color = groundColorFor(art, s);
+            return l.pages.some((p,i) => p.some(item => item.art.id === id) &&
+              pageScene(l,i).some(op => op.type === 'rect' && op.fill === color) && previewSVG(l,i,assets).includes(color));
+          });
+          const pdf = await PDFLib.PDFDocument.load(await createPDF(l, assets));
+          const uniform = layoutSetup({...s, groundColorMode: 'setup', groundColor: '#123456'});
+          const uniformColors = uniform.pages.flatMap((_,i) => pageScene(uniform,i))
+            .filter(op => op.type === 'rect' && op.fill && op.fill !== '#ffffff').map(op => op.fill);
+          const legacy = {...s}; delete legacy.groundColorMode;
+          let rejected = false; try { validateSetup({...s, groundColorMode: 'invalid'}); } catch { rejected = true; }
+          return {coverage,unique,allColors,pages:pdf.getPageCount(),expected:l.pages.length,
+            uniformColors:[...new Set(uniformColors)],legacy:validateSetup(legacy).groundColorMode,rejected};
+        }''')
+        self.assertTrue(result['coverage'] and result['unique'] and result['allColors'] and result['rejected'])
+        self.assertEqual(result['pages'], result['expected'])
+        self.assertEqual(result['uniformColors'], ['#123456'])
+        self.assertEqual(result['legacy'], 'setup')
+        with self.page.expect_download() as saved:
+            self.page.locator('#save').click()
+        payload = Path(saved.value.path()).read_bytes()
+        self.page.locator('#ground-color-mode').select_option('setup')
+        self.page.locator('#load-file').set_input_files({'name': 'factions.json', 'mimeType': 'application/json', 'buffer': payload})
+        self.ready()
+        self.page.reload()
+        self.ready()
+        expect(self.page.locator('#ground-color-mode')).to_have_value('faction')
+        self.page.locator('#era').select_option('american-civil-war')
+        self.assertEqual(self.page.locator('#faction-filters .faction-swatch').count(), 2)
+
+    def test_ground_symbols_geometry_and_vector_pdf(self):
+        result = self.page.evaluate('''async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, makeStrip, layoutSetup} = await import('./src/model.js');
+          const {groundSymbol, factionSymbols} = await import('./src/symbols.js');
+          const {pageScene, previewSVG, prepareArtwork, createPDF} = await import('./src/render.js');
+          const checks = [];
+          for (const depth of [20,30,40]) for (const count of [1,2,3,4]) for (const attached of [false,true]) {
+            const s = {...defaultSetup(), factionSymbols:true, ranks:count, skirmisherRanks:count,
+              riders:Math.max(2,count), lightRiders:Math.max(2,count), cavalryBaseDepth:depth,
+              monstrosityBaseDepth:depth, nameplates:attached, labelPlacement:'attached'};
+            for (const art of catalog) {
+              const strip = makeStrip(art,s), mark = groundSymbol(strip,s);
+              const expected = art.kind !== 'Mounted' && strip.count > 2 ? false : true;
+              const bounded = !mark || (mark.x >= .5 && mark.x + mark.size <= strip.bodyWidth - .5 &&
+                mark.y >= mark.section.y + .5 && mark.y + mark.size <= mark.section.y + mark.section.height - .5);
+              const grounds = strip.sections.filter(p=>p.kind==='ground');
+              const location = !mark || (art.kind === 'Mounted' && strip.count > 1
+                ? grounds.slice(1,-1).includes(mark.section) && mark.rotation === 90
+                : mark.section === grounds.at(-1));
+              checks.push(bounded && location && !!mark === expected);
+            }
+          }
+          const s = {...defaultSetup(), factionSymbols:true, fakeShadows:true};
+          const ids = ['gondor-swords','rohan-outriders','orc-troll','rohan-eowyn'];
+          s.quantities = Object.fromEntries(catalog.map(a=>[a.id,ids.includes(a.id)?1:0]));
+          const l=layoutSetup(s), assets=await prepareArtwork(l);
+          const ops=l.pages.flatMap((_,i)=>pageScene(l,i));
+          const pdf=await createPDF(l,assets), doc=await PDFLib.PDFDocument.load(pdf);
+          const svg=previewSVG(l,0,assets);
+          const off=layoutSetup({...s,factionSymbols:false});
+          const noSymbols=off.pages.every((_,i)=>!pageScene(off,i).some(op=>op.type==='polygon'));
+          const patches=l.pages.every((page,i)=>page.filter(s=>s.kind!=='nameplate').every(strip=>{
+            const mark=groundSymbol(strip,s), sy=strip.y+(strip.bodyY||0)+mark.y, sx=strip.x+mark.x;
+            const scene=pageScene(l,i), index=scene.findIndex(op=>op.type==='polygon'&&
+              op.points.every(p=>p[0]>=sx && p[0]<=sx+mark.size && p[1]>=sy && p[1]<=sy+mark.size));
+            return index>0 && scene[index-1].type==='rect' && scene[index-1].w===mark.size+.5;
+          }));
+          return {checks:checks.every(Boolean), coverage:catalog.every(a=>factionSymbols[a.era]?.[a.faction]),
+            polygons:ops.filter(op=>op.type==='polygon').length,svg:svg.includes('<polygon'),
+            pages:doc.getPageCount(),expected:l.pages.length,noSymbols,patches,
+            unchanged:JSON.stringify(l.pages.map(p=>p.map(s=>[s.x,s.y,s.width,s.height])))===
+              JSON.stringify(off.pages.map(p=>p.map(s=>[s.x,s.y,s.width,s.height])))};
+        }''')
+        self.assertTrue(all(result[k] for k in ['checks','coverage','svg','noSymbols','patches','unchanged']), result)
+        self.assertGreater(result['polygons'], 0)
+        self.assertEqual(result['pages'], result['expected'])
+
+    def test_numbered_labels_and_independent_symbol_controls(self):
+        self.page.locator('#faction-symbols').check()
+        self.ready()
+        expect(self.page.locator('#nameplates')).not_to_be_checked()
+        self.assertGreater(self.page.locator('#sheet polygon').count(), 0)
+        self.page.locator('#nameplates').check()
+        self.page.locator('#number-bases').check()
+        self.page.locator('#qty-gondor-swords').fill('2')
+        self.ready()
+        self.assertIn('Gondor Swords 2', self.page.locator('#sheet').text_content())
+        with self.page.expect_download() as saved:
+            self.page.locator('#save').click()
+        payload = Path(saved.value.path()).read_bytes()
+        for control in ['faction-symbols','number-bases','nameplates']:
+            self.page.locator(f'#{control}').uncheck()
+        self.page.locator('#load-file').set_input_files({'name':'identification.json','mimeType':'application/json','buffer':payload})
+        self.ready()
+        self.page.reload()
+        self.ready()
+        for control in ['faction-symbols','number-bases','nameplates']:
+            expect(self.page.locator(f'#{control}')).to_be_checked()
+        self.page.locator('#faction-symbols').uncheck()
+        self.ready()
+        self.assertEqual(self.page.locator('#sheet polygon').count(), 0)
+        self.assertIn('Gondor Swords 2', self.page.locator('#sheet').text_content())
+        result = self.page.evaluate('''async () => {
+          const {catalog}=await import('./src/catalog.js');
+          const {defaultSetup,baseLabel,layoutSetup,validateSetup}=await import('./src/model.js');
+          const {prepareArtwork,createPDF}=await import('./src/render.js');
+          const a=catalog.find(a=>a.id==='gondor-swords'), hero=catalog.find(a=>a.id==='rohan-eowyn');
+          const s={...defaultSetup(),nameplates:true,numberBases:true,
+            quantities:{[a.id]:3,[hero.id]:2},names:{[a.id]:'Tower Guard'},copyNames:{[a.id]:['','Veterans']}};
+          const names=[baseLabel(a,s,1),baseLabel(a,s,2),baseLabel(a,s,3),baseLabel(hero,s,2),
+            baseLabel(a,{...s,quantities:{[a.id]:1}}),baseLabel(a,{...s,numberBases:false})];
+          const l=layoutSetup({...s,labelPlacement:'attached'}), assets=await prepareArtwork(l);
+          const pdf=await PDFLib.PDFDocument.load(await createPDF(l,assets));
+          const strip=l.pages.flat().find(x=>x.art.id===a.id&&x.copy===3&&x.kind!=='nameplate');
+          const old={...s}; delete old.numberBases; delete old.factionSymbols;
+          const legacy=validateSetup(old), rejected=[];
+          for(const patch of [{factionSymbols:1},{numberBases:'yes'}]) {
+            try {validateSetup({...s,...patch});rejected.push(false)} catch {rejected.push(true)}
+          }
+          return {names,attached:strip.labelName,legacy:[legacy.numberBases,legacy.factionSymbols],rejected,
+            pages:pdf.getPageCount(),expected:l.pages.length};
+        }''')
+        self.assertEqual(result['names'], ['Tower Guard 1','Veterans','Tower Guard 3','Rohan Éowyn','Tower Guard','Tower Guard'])
+        self.assertEqual(result['attached'], 'Tower Guard 3')
+        self.assertEqual(result['legacy'], [False,False])
+        self.assertTrue(all(result['rejected']))
+        self.assertEqual(result['pages'], result['expected'])
+
     def test_setup_colors_round_trip_and_blank_backs(self):
+        self.page.locator('#ground-color-mode').select_option('setup')
         self.page.locator('#ground-color').fill('#245632')
         self.page.locator('#figure-color').fill('#e8dbb4')
         self.page.locator('#silhouette-color').fill('#cc3300')
@@ -1014,6 +1188,7 @@ class WorkshopTests(unittest.TestCase):
         self.assertEqual(setup['groundColor'], '#245632')
         self.assertEqual(setup['figureColor'], '#e8dbb4')
         self.assertEqual(setup['silhouetteColor'], '#cc3300')
+        self.page.locator('#ground-color-mode').select_option('setup')
         self.page.locator('#ground-color').fill('#abcdef')
         self.page.locator('#load-file').set_input_files({'name': 'palette.json', 'mimeType': 'application/json', 'buffer': payload})
         expect(self.page.locator('#ground-color')).to_have_value('#245632')
@@ -1036,6 +1211,7 @@ class WorkshopTests(unittest.TestCase):
         self.assertFalse(any(':silhouette' in key or ':blank' in key for key in result['images']))
 
     def test_pdf_download_has_exact_page_size_artwork_and_colors(self):
+        self.page.locator('#ground-color-mode').select_option('setup')
         self.page.locator('#ground-color').fill('#224466')
         self.page.locator('#figure-color').fill('#ddccaa')
         self.ready()
@@ -1107,6 +1283,7 @@ class WorkshopTests(unittest.TestCase):
         self.page.locator('#name-gondor-swords').fill('Guard')
         self.page.locator('[data-art="gondor-swords"] summary').click()
         self.page.locator('#copy-name-gondor-swords-1').fill('First Guard')
+        self.page.locator('#ground-color-mode').select_option('setup')
         self.page.locator('#ground-color').fill('#245632')
         self.ready()
         before = self.page.evaluate("localStorage.getItem('uprights.setup.v1')")

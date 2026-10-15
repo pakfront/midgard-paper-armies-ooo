@@ -1,3 +1,6 @@
+import {groundColorFor} from './catalog.js';
+import {groundSymbol, symbolPolygons} from './symbols.js';
+
 const imageCache = new Map(), panelCache = new Map(), shadowCache = new Map();
 const DPI = 600, PX_PER_MM = DPI / 25.4;
 const makeCanvas = (w, h) => Object.assign(document.createElement('canvas'), {width: w, height: h});
@@ -184,14 +187,15 @@ export function pageScene(layout, index) {
   text(`PAPER ARMY STANDEES / Foot 40 x 20 mm; cavalry 40 x ${setup.cavalryBaseDepth} mm; monsters 40 x ${setup.monstrosityBaseDepth} mm; heroes 20 x 20 mm`, margin, margin + 2, 2.7);
   text('Print at 100% / actual size. Cut solid outlines; fold dashed crests and dotted feet.', margin, margin + 6, 2);
   for (const strip of layout.pages[index]) {
+    const groundColor = groundColorFor(strip.art, setup);
     const {x: netX, y, sections} = strip, x = netX + (strip.bodyX || 0), w = strip.bodyWidth ?? strip.width;
     text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? strip.wrap ? ' / ' + strip.edge + ' label' : ' / label' : ''}`, netX, strip.captionY, w === 20 ? 1.7 : 2);
     if (strip.kind === 'nameplate') {
       const {size, textWidth} = fittedLabel(strip, strip.wrap ? 6 : 8);
       rect(x, y, w, strip.height, '#ffffff', '#59645c');
       if (strip.wrap) {
-        rect(x, y, w, 3, setup.groundColor);
-        rect(x, y + 6, w, 3, setup.groundColor);
+        rect(x, y, w, 3, groundColor);
+        rect(x, y + 6, w, 3, groundColor);
         if (setup.guides) for (const offset of [3, 6]) {
           line(x, y + offset, x + w, y + offset, '#ffffff', .35, [1.2, .8]);
           line(x, y + offset, x + w, y + offset, '#8f6333', .15, [1.2, .8]);
@@ -205,13 +209,20 @@ export function pageScene(layout, index) {
       const sy = y + (strip.bodyY || 0) + section.y;
       if (section.kind === 'face' && setup.figureBackground === 'gradient') {
         ops.push({type: 'image', key: gradientKey(strip, section, setup), x, y: sy, w, h: section.height});
-      } else rect(x, sy, w, section.height, section.kind === 'ground' ? setup.groundColor : setup.figureColor);
+      } else rect(x, sy, w, section.height, section.kind === 'ground' ? groundColor : setup.figureColor);
       if (setup.fakeShadows) for (const shadow of groundShadows(strip, section)) {
         ops.push({type: 'image', key: shadowKey(strip, shadow), x, y: y + (strip.bodyY || 0) + shadow.y, w, h: shadow.height});
       }
       if (section.kind === 'face' && section.variant !== 'blank') {
         ops.push({type: 'image', key: panelKey(strip, section.variant, setup.silhouetteColor), x, y: sy, w, h: section.height});
       }
+    }
+    const mark = groundSymbol(strip, setup);
+    if (mark) {
+      const mx = x + mark.x, my = y + (strip.bodyY || 0) + mark.y;
+      // Clear only the emblem's patch, preserving shadows elsewhere on the ground.
+      rect(mx - .25, my - .25, mark.size + .5, mark.size + .5, groundColor);
+      ops.push(...symbolPolygons(mark, mx, my, contrast(groundColor), groundColor));
     }
     if (setup.guides) for (const fold of strip.folds) {
       const mountain = fold.kind === 'mountain';
@@ -228,7 +239,7 @@ export function pageScene(layout, index) {
       };
       for (const tab of strip.wrapTabs) {
         const ty = y + tab.y, front = tab.edge === 'front';
-        rect(x, ty, w, tab.height, setup.groundColor);
+        rect(x, ty, w, tab.height, groundColor);
         if (strip.art.kind !== 'Mounted') {
           const bandY = ty + (front ? 7 : 0);
           rect(x, bandY, w, 3, '#ffffff');
@@ -255,6 +266,7 @@ const escape = value => String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '
 export function previewSVG(layout, index, assets) {
   const elements = pageScene(layout, index).map(op => {
     if (op.type === 'rect') return `<rect x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" fill="${op.fill || 'none'}" stroke="${op.stroke || 'none'}" stroke-width="${op.thickness}"/>`;
+    if (op.type === 'polygon') return `<polygon points="${op.points.map(p => p.join(',')).join(' ')}" fill="${op.fill}"/>`;
     if (op.type === 'line') return `<line x1="${op.x}" y1="${op.y}" x2="${op.x2}" y2="${op.y2}" stroke="${op.color}" stroke-width="${op.thickness}" stroke-dasharray="${op.dash.join(' ')}"/>`;
     if (op.type === 'text') return `<text x="${op.x}" y="${op.y}" transform="rotate(${op.rotation} ${op.x} ${op.y})" font-family="Helvetica,Arial,sans-serif" font-size="${op.size}" fill="${op.color}">${escape(op.value)}</text>`;
     return `<image x="${op.x}" y="${op.y}" width="${op.w}" height="${op.h}" preserveAspectRatio="none" href="${assets.get(op.key).url}"/>`;
@@ -278,6 +290,11 @@ export async function createPDF(layout, assets, progress = () => {}) {
       if (op.type === 'rect') page.drawRectangle({x: op.x * point, y: (layout.height - op.y - op.h) * point,
         width: op.w * point, height: op.h * point, ...(op.fill ? {color: color(op.fill)} : {}),
         ...(op.stroke ? {borderColor: color(op.stroke), borderWidth: op.thickness * point} : {borderWidth: 0})});
+      else if (op.type === 'polygon') {
+        const points = op.points.map(([x, y]) => [x * point, (layout.height - y) * point]);
+        const path = points.map(([x, y], i) => `${i ? 'L' : 'M'} ${x} ${-y}`).join(' ') + ' Z';
+        page.drawSvgPath(path, {x: 0, y: 0, color: color(op.fill), borderWidth: 0});
+      }
       else if (op.type === 'line') page.drawLine({start: {x: op.x * point, y: (layout.height - op.y) * point},
         end: {x: op.x2 * point, y: (layout.height - op.y2) * point}, color: color(op.color), thickness: op.thickness * point,
         dashArray: op.dash.map(n => n * point)});

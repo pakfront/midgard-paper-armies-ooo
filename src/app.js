@@ -1,12 +1,12 @@
-import {catalog, eras} from './catalog.js';
+import {catalog, eras, factionGroundColors, groundColorFor} from './catalog.js';
 import {defaultSetup, validateSetup, layoutSetup, makeStrip, unitTypeOptions} from './model.js';
 import {prepareArtwork, previewSVG, createPDF} from './render.js';
 
 const $ = id => document.getElementById(id), storageKey = 'uprights.setup.v1';
-const fields = {fakeShadows: 'fake-shadows', cavalryBaseDepth: 'cavalry-base-depth', monstrosityBaseDepth: 'monstrosity-base-depth', figureBackground: 'figure-background', gradientBottom: 'gradient-bottom', gradientTop: 'gradient-top', labelPlacement: 'label-placement', ranks: 'ranks', skirmisherRanks: 'skirmisher-ranks', riders: 'riders', lightRiders: 'light-riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
-  groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides', nameplates: 'nameplates'};
+const fields = {factionSymbols: 'faction-symbols', numberBases: 'number-bases', fakeShadows: 'fake-shadows', cavalryBaseDepth: 'cavalry-base-depth', monstrosityBaseDepth: 'monstrosity-base-depth', figureBackground: 'figure-background', gradientBottom: 'gradient-bottom', gradientTop: 'gradient-top', labelPlacement: 'label-placement', ranks: 'ranks', skirmisherRanks: 'skirmisher-ranks', riders: 'riders', lightRiders: 'light-riders', reverse: 'reverse', infantryHeight: 'infantry-height', mountedHeight: 'mounted-height',
+  groundColorMode: 'ground-color-mode', groundColor: 'ground-color', figureColor: 'figure-color', silhouetteColor: 'silhouette-color', paper: 'paper', orientation: 'orientation', margin: 'margin', gap: 'gap', guides: 'guides', nameplates: 'nameplates'};
 const numeric = new Set(['cavalryBaseDepth', 'monstrosityBaseDepth', 'ranks', 'skirmisherRanks', 'riders', 'lightRiders', 'infantryHeight', 'mountedHeight', 'margin', 'gap']);
-const boolean = new Set(['guides', 'nameplates', 'fakeShadows']);
+const boolean = new Set(['guides', 'nameplates', 'numberBases', 'factionSymbols', 'fakeShadows']);
 let setup = defaultSetup(), currentLayout = null, currentAssets = null, pageIndex = 0, revision = 0, timer, exporting = false;
 
 const notice = document.createElement('p'); notice.className = 'notice'; notice.hidden = true; notice.setAttribute('role', 'status');
@@ -81,12 +81,25 @@ function readControls() {
   return validateSetup(value);
 }
 function counts() {
+  $('ground-color').disabled = setup.groundColorMode === 'faction';
+  for (const card of document.querySelectorAll('.art-card')) {
+    const art = catalog.find(a => a.id === card.dataset.art);
+    card.style.setProperty('--faction-color', groundColorFor(art, setup));
+  }
+  for (const button of $('faction-filters').children) {
+    const palette = factionGroundColors[$('era').value]?.[button.dataset.filter];
+    if (palette) {
+      button.style.setProperty('--faction-color', setup.groundColorMode === 'faction' ? palette.color : setup.groundColor);
+      button.title = setup.groundColorMode === 'faction' ? `${button.dataset.filter}: ${palette.name} (${palette.color})` : `Setup ground color (${setup.groundColor})`;
+    }
+  }
   const total = Object.values(setup.quantities).reduce((a, b) => a + b, 0);
   $('base-count').textContent = `${total} ${total === 1 ? 'base' : 'bases'}`;
   for (const art of catalog) document.querySelector(`[data-art="${art.id}"]`).classList.toggle('selected', setup.quantities[art.id] > 0);
   $('ground-value').textContent = setup.groundColor; $('figure-value').textContent = setup.figureColor;
   $('silhouette-value').textContent = setup.silhouetteColor;
   $('label-placement').disabled = !setup.nameplates;
+  $('number-bases').disabled = !setup.nameplates;
   $('figure-color').disabled = setup.figureBackground !== 'solid';
   $('gradient-bottom').disabled = $('gradient-top').disabled = setup.figureBackground !== 'gradient';
   $('silhouette-color').disabled = setup.reverse !== 'silhouette';
@@ -94,7 +107,7 @@ function counts() {
 
 function diagram() {
   const infantry = makeStrip(catalog.find(art => art.id === 'gondor-swords'), setup), cavalry = makeStrip(catalog.find(art => art.id === 'gondor-horse'), setup);
-  const ground = setup.groundColor;
+  const ground = groundColorFor(catalog.find(art => art.id === 'gondor-swords'), setup);
   const svg = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 245" role="img" aria-label="Infantry folds parallel to the 40 millimetre frontage; cavalry folds parallel to the selected base depth. Flat feet between doubled upright panels."><g font-family="system-ui,sans-serif" fill="#344035">`];
   for (const [i, strip] of [infantry, cavalry].entries()) {
     const left = 25 + i * 215, top = 28, depth = strip.baseDepth * 3.5;
@@ -173,6 +186,13 @@ function updateFactions() {
   for (const faction of ['All', ...factions]) {
     const button = document.createElement('button'); button.dataset.filter = faction;
     button.textContent = faction === 'All' ? 'All units' : faction;
+    const palette = factionGroundColors[$('era').value]?.[faction];
+    if (palette) {
+      const swatch = document.createElement('span'); swatch.className = 'faction-swatch';
+      swatch.setAttribute('aria-hidden', 'true'); button.prepend(swatch);
+      button.style.setProperty('--faction-color', setup.groundColorMode === 'faction' ? palette.color : setup.groundColor);
+      button.title = setup.groundColorMode === 'faction' ? `${faction}: ${palette.name} (${palette.color})` : `Setup ground color (${setup.groundColor})`;
+    }
     button.addEventListener('click', () => { factionFilter = faction; filterArtwork(); });
     $('faction-filters').append(button);
   }
