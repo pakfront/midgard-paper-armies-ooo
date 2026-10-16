@@ -51,6 +51,30 @@ class WorkshopTests(unittest.TestCase):
     def ready(self):
         expect(self.page.locator('#download')).to_be_enabled(timeout=30000)
 
+    def test_settings_and_assembly_tabs_preserve_controls_and_keyboard_navigation(self):
+        settings = self.page.get_by_role('tab', name='Settings', exact=True)
+        assembly = self.page.get_by_role('tab', name='Instructions', exact=True)
+        expect(settings).to_have_attribute('aria-selected', 'true')
+        expect(self.page.locator('#assembly-panel')).to_be_hidden()
+        self.page.locator('#ranks').select_option('3')
+        self.ready()
+        assembly.click()
+        expect(self.page.locator('#settings-panel')).to_be_hidden()
+        expect(self.page.locator('#fold-diagram svg')).to_be_visible()
+        self.assertEqual(self.page.locator('#assembly li').count(), 7)
+        expect(self.page.locator('#download')).to_be_enabled()
+        assembly.press('ArrowLeft')
+        expect(settings).to_be_focused()
+        expect(self.page.locator('#ranks')).to_have_value('3')
+        settings.press('End')
+        expect(assembly).to_be_focused()
+        assembly.press('Home')
+        expect(settings).to_be_focused()
+        self.page.set_viewport_size({'width': 390, 'height': 844})
+        assembly.click()
+        expect(self.page.locator('#fold-diagram svg')).to_be_visible()
+        self.assertTrue(self.page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+
     def test_packing_reuses_gaps_and_preserves_spacing_and_captions(self):
         result = self.page.evaluate('''async () => {
           const {pack}=await import('./src/packing.js');
