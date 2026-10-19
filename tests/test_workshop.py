@@ -1222,6 +1222,41 @@ class WorkshopTests(unittest.TestCase):
         self.assertTrue(all(result['rejected']))
         self.assertEqual(result['pages'], result['expected'])
 
+    def test_hero_labels_center_within_base_and_fold_bands(self):
+        result = self.page.evaluate('''async () => {
+          const {catalog}=await import('./src/catalog.js');
+          const {defaultSetup,layoutSetup}=await import('./src/model.js');
+          const {prepareArtwork,pageScene,createPDF}=await import('./src/render.js');
+          const doc=await PDFLib.PDFDocument.create();
+          const font=await doc.embedFont(PDFLib.StandardFonts.Helvetica), point=72/25.4;
+          const checks=[];
+          for(const id of ['rohan-eowyn','rohan-foot-captain'])
+          for(const placement of ['rear','attached','separate']) for(const symbols of [false,true]) {
+            const s={...defaultSetup(),nameplates:true,factionSymbols:symbols,labelPlacement:placement,
+              names:{[id]:'Ada'},quantities:Object.fromEntries(catalog.map(a=>[a.id,a.id===id?1:0]))};
+            const l=layoutSetup(s),assets=await prepareArtwork(l);
+            for(let i=0;i<l.pages.length;i++) {
+              const ops=pageScene(l,i),texts=ops.filter(o=>o.type==='text'&&o.value==='Ada');
+              for(const text of texts) {
+                const item=l.pages[i].find(p=>text.y>p.y&&text.y<p.y+p.height&&text.x>=p.x&&text.x<=p.x+p.width);
+                const width=font.widthOfTextAtSize(text.value,text.size*point)/point;
+                const center=text.x+(text.rotation===180?-width/2:width/2);
+                checks.push(!!item&&Math.abs(center-(item.x+item.width/2))<1e-7);
+                if(item?.wrap) {
+                  const bandStart=item.edge==='back'?0:3;
+                  checks.push(text.y>item.y+bandStart&&text.y<item.y+bandStart+3);
+                }
+                if(item?.rearGround) checks.push(text.y<item.y+7);
+              }
+              checks.push(texts.length>0);
+            }
+            const pdf=await PDFLib.PDFDocument.load(await createPDF(l,assets));
+            checks.push(pdf.getPageCount()===l.pages.length);
+          }
+          return checks;
+        }''')
+        self.assertTrue(all(result))
+
     def test_rear_ground_band_geometry_artwork_labels_and_pdf(self):
         expect(self.page.locator('#label-placement')).to_have_value('rear')
         self.page.locator('#nameplates').check()

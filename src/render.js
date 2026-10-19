@@ -132,14 +132,17 @@ function fittedRearLabel(item, setup) {
   const symbol = setup.factionSymbols ? factionSymbols[item.art.era]?.[item.art.faction] : null;
   const symbolSize = symbol ? 4.8 : 0, inset = symbol ? symbolSize + 1.2 : 0;
   if (!item.name) return {symbol, symbolSize, inset, lines: [], size: 0};
-  const available = item.width - inset;
   const candidates = [[item.name]];
   for (let i = 0; i < item.name.length; i++) if (item.name[i] === ' ')
     candidates.push([item.name.slice(0, i), item.name.slice(i + 1)]);
-  for (const lines of candidates) {
+  // Reserve matching space on the right of Hero names when they can still fit.
+  // Fall back to the wider, asymmetric text area for long names.
+  const rightInsets = item.art.hero && symbol ? [inset, 0] : [0];
+  for (const rightInset of rightInsets) for (const lines of candidates) {
     try {
+      const available = item.width - inset - rightInset;
       const size = Math.min(...lines.map(name => fittedLabel({...item, name, width: available}, 8).size));
-      return {symbol, symbolSize, inset, lines, size};
+      return {symbol, symbolSize, inset, rightInset, lines, size};
     } catch { /* Try two lines before reporting a name that cannot fit. */ }
   }
   throw Error(`${item.art.name} base ${item.copy}: shorten the rear ground label (minimum 6 pt).`);
@@ -214,10 +217,11 @@ export function pageScene(layout, index) {
     const fit = fittedRearLabel({...item, width: bw}, setup);
     rect(bx, by, bw, bh, color);
     if (fit.symbol) ops.push(...symbolPolygons({symbol: fit.symbol, size: fit.symbolSize, rotation: 0},
-      bx + .6, by + (bh - fit.symbolSize) / 2, contrast(color), color));
+      bx + (item.art.hero && !item.name ? (bw - fit.symbolSize) / 2 : .6),
+      by + (bh - fit.symbolSize) / 2, contrast(color), color));
     fit.lines.forEach((value, i) => {
       const textWidth = labelFont.widthOfTextAtSize(value, fit.size * 72 / 25.4) / (72 / 25.4);
-      text(value, bx + fit.inset + (bw - fit.inset - textWidth) / 2,
+      text(value, bx + fit.inset + (bw - fit.inset - (fit.rightInset || 0) - textWidth) / 2,
         by + bh / 2 + (i - (fit.lines.length - 1) / 2) * fit.size * 1.2 + fit.size * .35,
         fit.size, contrast(color));
     });
