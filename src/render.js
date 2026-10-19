@@ -227,7 +227,12 @@ export function pageScene(layout, index) {
     const {x: netX, y, sections} = strip, x = netX + (strip.bodyX || 0), w = strip.bodyWidth ?? strip.width;
     text(`${strip.art.shortName || strip.art.name} ${strip.copy}${strip.kind === 'nameplate' ? strip.wrap ? ' / ' + strip.edge + ' label' : ' / label' : ''}`, netX, strip.captionY, w === 20 ? 1.7 : 2);
     if (strip.kind === 'nameplate' && strip.rearGround) {
-      rearLabel(strip, x, y, w, strip.height, groundColor);
+      rect(x, y, w, strip.height, groundColor);
+      rearLabel(strip, x, y, w, strip.labelHeight, groundColor);
+      if (setup.guides) for (const offset of [strip.labelHeight, strip.labelHeight + 3]) {
+        line(x, y + offset, x + w, y + offset, '#ffffff', .35, [1.2, .8]);
+        line(x, y + offset, x + w, y + offset, '#8f6333', .15, [1.2, .8]);
+      }
       rect(x, y, w, strip.height, null, '#59645c');
       continue;
     }
@@ -235,15 +240,19 @@ export function pageScene(layout, index) {
       const {size, textWidth} = fittedLabel(strip, strip.wrap ? 6 : 8);
       rect(x, y, w, strip.height, '#ffffff', '#59645c');
       if (strip.wrap) {
-        rect(x, y, w, 3, groundColor);
-        rect(x, y + 6, w, 3, groundColor);
-        if (setup.guides) for (const offset of [3, 6]) {
+        if (strip.edge === 'back') rect(x, y + 3, w, 7, groundColor);
+        else {
+          rect(x, y, w, 3, groundColor);
+          rect(x, y + 6, w, 3, groundColor);
+        }
+        if (setup.guides) for (const offset of strip.edge === 'back' ? [3] : [3, 6]) {
           line(x, y + offset, x + w, y + offset, '#ffffff', .35, [1.2, .8]);
           line(x, y + offset, x + w, y + offset, '#8f6333', .15, [1.2, .8]);
         }
         rect(x, y, w, strip.height, null, '#59645c');
       }
-      text(strip.name, x + (w - textWidth) / 2, y + strip.height / 2 + size * .35, size, '#000000');
+      text(strip.name, x + (w - textWidth) / 2,
+        y + (strip.wrap && strip.edge === 'back' ? 1.5 : strip.height / 2) + size * .35, size, '#000000');
       continue;
     }
     for (const section of sections) {

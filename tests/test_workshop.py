@@ -494,7 +494,7 @@ class WorkshopTests(unittest.TestCase):
             for label in layout['labels']:
                 self.assertTrue(label['wrap'])
                 self.assertIn(label['edge'], ['front', 'back'])
-                self.assertEqual(label['height'], 9)
+                self.assertEqual(label['height'], 10 if label['edge'] == 'back' else 9)
                 self.assertEqual(label['width'], label['baseWidth'])
             self.assertEqual(sorted(n['rotation'] for n in layout['named']), [0, 180])
             self.assertTrue(all(abs(n['size'] * 72 / 25.4 - 6) < 1e-6 for n in layout['named']))
@@ -1276,6 +1276,8 @@ class WorkshopTests(unittest.TestCase):
             bounds.push({width:(max-min+1)/image.width*depth,rearAlpha,key});
             const labels=l.pages.flat().filter(p=>p.rearGround);
             examples.push({pages:pdf.getPageCount(),expected:l.pages.length,
+              rearLabelFolds:labels.every(p=>[7,10].every(offset=>ops.some(op=>op.type==='line'&&op.x===p.x&&op.y===p.y+offset&&op.x2===p.x+p.width)) &&
+                ops.some(op=>op.type==='text'&&op.x>=p.x&&op.x<p.x+p.width&&op.y>p.y&&op.y<p.y+7)),
               labels:labels.map(p=>[p.width,p.height]),text:ops.filter(p=>p.type==='text').map(p=>p.value),
               cuts:ops.filter(p=>p.type==='line'&&p.color==='#773c85').length,
               frontWraps:l.pages.flat().filter(p=>p.wrap).map(p=>[p.edge,p.width,p.height]),
@@ -1299,9 +1301,9 @@ class WorkshopTests(unittest.TestCase):
         self.assertTrue(result['checks'] and result['noNames'] and result['off'] and result['cutsWithoutGuides'])
         for example in result['examples']:
             self.assertEqual(example['pages'], example['expected'])
-            self.assertEqual(example['labels'], [[40,7],[20,7]])
+            self.assertEqual(example['labels'], [[40,17],[20,17]])
             self.assertEqual(example['frontWraps'], [['front',40,9],['front',20,9]])
-            self.assertTrue(example['frontText'])
+            self.assertTrue(example['frontText'] and example['rearLabelFolds'])
             self.assertEqual(example['positions'], [3,13])
             self.assertTrue(example['tongues'] and example['rearText'])
             self.assertIn('Gondor Swords 2', example['text'])
