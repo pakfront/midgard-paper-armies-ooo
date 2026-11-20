@@ -41,7 +41,7 @@ class WorkshopTests(unittest.TestCase):
         self.page = self.context.new_page()
         self.errors = []
         self.page.on('pageerror', lambda error: self.errors.append(str(error)))
-        self.page.goto(self.url)
+        self.page.goto(self.url + "/#manual")
         self.ready()
 
     def tearDown(self):
@@ -126,7 +126,7 @@ class WorkshopTests(unittest.TestCase):
         with self.page.expect_download() as saved:
             self.page.locator('#save').click()
         payload = Path(saved.value.path()).read_bytes()
-        self.assertTrue(json.loads(payload)['fakeShadows'])
+        self.assertTrue(json.loads(payload)['paper']['fakeShadows'])
         self.page.locator('#fake-shadows').uncheck()
         self.page.locator('#load-file').set_input_files({'name': 'shadows.json', 'mimeType': 'application/json', 'buffer': payload})
         self.ready()
@@ -1358,7 +1358,7 @@ class WorkshopTests(unittest.TestCase):
         with self.page.expect_download() as saved:
             self.page.locator('#save').click()
         payload = Path(saved.value.path()).read_bytes()
-        setup = json.loads(payload)
+        setup = json.loads(payload)['paper']
         self.assertEqual(setup['groundColor'], '#245632')
         self.assertEqual(setup['figureColor'], '#e8dbb4')
         self.assertEqual(setup['silhouetteColor'], '#cc3300')
@@ -1375,7 +1375,7 @@ class WorkshopTests(unittest.TestCase):
         expect(self.page.locator('#silhouette-color')).to_be_disabled()
         result = self.page.evaluate('''async () => {
           const {layoutSetup}=await import('./src/model.js'),{pageScene}=await import('./src/render.js');
-          const s=JSON.parse(localStorage.getItem('uprights.setup.v1')),l=layoutSetup(s);
+          const s=JSON.parse(localStorage.getItem('midgard-army-project.v1')).paper,l=layoutSetup(s);
           return {fills:pageScene(l,0).filter(x=>x.type==='rect'&&x.fill&&x.fill!=='#ffffff').map(x=>x.fill),
             images:pageScene(l,0).filter(x=>x.type==='image').map(x=>x.key),
             backs:l.pages.flat().filter(x=>x.art.kind==='Infantry').flatMap(x=>x.sections.filter(a=>a.side==='back').map(a=>a.variant))};
@@ -1419,7 +1419,7 @@ class WorkshopTests(unittest.TestCase):
             self.assertAlmostEqual(size['width'], 612)
             self.assertAlmostEqual(size['height'], 792)
 
-    def test_archer_units_load_legacy_setups_and_export_pdf(self):
+    def test_archer_units_load_project_and_export_pdf(self):
         archer_ids = ['gondor-archers', 'gondor-horse-archers', 'orc-archers', 'orc-warg-archers']
         self.page.locator('#load-file').set_input_files(str(ROOT / 'examples/starter-setup.json'))
         self.page.wait_for_function("document.getElementById('load-file').value === ''")
@@ -1431,14 +1431,14 @@ class WorkshopTests(unittest.TestCase):
         for art_id in archer_ids:
             self.page.locator(f'#qty-{art_id}').fill('1')
         self.page.wait_for_function('''ids => {
-          const saved = JSON.parse(localStorage.getItem('uprights.setup.v1'));
+          const saved = JSON.parse(localStorage.getItem('midgard-army-project.v1')).paper;
           return saved && Object.entries(saved.quantities).every(([id, count]) => count === (ids.includes(id) ? 1 : 0));
         }''', arg=archer_ids)
         self.ready()
         result = self.page.evaluate('''async () => {
           const {layoutSetup}=await import('./src/model.js');
           const {prepareArtwork,createPDF}=await import('./src/render.js');
-          const setup=JSON.parse(localStorage.getItem('uprights.setup.v1'));
+          const setup=JSON.parse(localStorage.getItem('midgard-army-project.v1')).paper;
           const layout=layoutSetup(setup),assets=await prepareArtwork(layout);
           const bytes=await createPDF(layout,assets),pdf=await PDFLib.PDFDocument.load(bytes);
           return {ids:layout.pages.flat().map(strip=>strip.art.id),
@@ -1460,7 +1460,7 @@ class WorkshopTests(unittest.TestCase):
         self.page.locator('#ground-color-mode').select_option('setup')
         self.page.locator('#ground-color').fill('#245632')
         self.ready()
-        before = self.page.evaluate("localStorage.getItem('uprights.setup.v1')")
+        before = self.page.evaluate("localStorage.getItem('midgard-army-project.v1')")
 
         def cancel(dialog):
             self.assertEqual(dialog.type, 'confirm')
@@ -1469,7 +1469,7 @@ class WorkshopTests(unittest.TestCase):
 
         self.page.once('dialog', cancel)
         self.page.locator('#clear').click()
-        self.assertEqual(before, self.page.evaluate("localStorage.getItem('uprights.setup.v1')"))
+        self.assertEqual(before, self.page.evaluate("localStorage.getItem('midgard-army-project.v1')"))
         expect(self.page.locator('#name-gondor-swords')).to_have_value('Guard')
         expect(self.page.locator('#copy-name-gondor-swords-1')).to_have_value('First Guard')
 
@@ -1482,7 +1482,7 @@ class WorkshopTests(unittest.TestCase):
         expect(self.page.locator('#sheet')).to_contain_text('Choose at least one base')
         expect(self.page.locator('#ground-color')).to_have_value('#245632')
         expect(self.page.locator('#nameplates')).to_be_checked()
-        saved = self.page.evaluate("JSON.parse(localStorage.getItem('uprights.setup.v1'))")
+        saved = self.page.evaluate("JSON.parse(localStorage.getItem('midgard-army-project.v1')).paper")
         self.assertTrue(all(value == 0 for value in saved['quantities'].values()))
         self.assertTrue(all(value == '' for value in saved['names'].values()))
         self.assertTrue(all(value == [] for value in saved['copyNames'].values()))
@@ -1498,7 +1498,7 @@ class WorkshopTests(unittest.TestCase):
         self.ready()
         before = self.page.locator('#base-count').inner_text()
         self.page.locator('#load-file').set_input_files({'name': 'bad.json', 'mimeType': 'application/json', 'buffer': b'{"version":99}'})
-        expect(self.page.locator('.notice')).to_contain_text('Could not load setup')
+        expect(self.page.locator('#project-notice')).to_contain_text('Could not open project')
         self.assertEqual(before, self.page.locator('#base-count').inner_text())
         self.page.locator('#mounted-height').fill('30')
         expect(self.page.locator('#status')).to_contain_text('does not fit', timeout=10000)
@@ -1618,7 +1618,7 @@ class WorkshopTests(unittest.TestCase):
         result = self.page.evaluate("""async () => {
           const {layoutSetup,defaultSetup,validateSetup}=await import('./src/model.js');
           const {prepareArtwork,pageScene,createPDF}=await import('./src/render.js');
-          const setup=JSON.parse(localStorage.getItem('uprights.setup.v1'));
+          const setup=JSON.parse(localStorage.getItem('midgard-army-project.v1')).paper;
           const l=layoutSetup(setup),a=await prepareArtwork(l);
           const labels=l.pages.flat().filter(x=>x.kind==='nameplate');
           const ops=l.pages.flatMap((_,i)=>pageScene(l,i));

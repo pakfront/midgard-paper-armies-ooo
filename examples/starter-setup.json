@@ -1,23 +1,55 @@
 {
+  "format": "midgard-army-project",
   "version": 1,
-  "ranks": 2,
-  "riders": 4,
-  "reverse": "silhouette",
-  "infantryHeight": 14.5,
-  "mountedHeight": 21,
-  "groundColor": "#b6bc91",
-  "figureColor": "#ffffff",
-  "paper": "a4",
-  "orientation": "portrait",
-  "margin": 10,
-  "gap": 4,
-  "guides": true,
-  "quantities": {
-    "gondor-swords": 1,
-    "gondor-horse": 1,
-    "orc-axes": 1,
-    "orc-wargs": 1,
-    "orc-warband": 0,
-    "gondor-spears": 0
+  "mode": "manual",
+  "army": {
+    "id": "2410c5e7-7dda-41fc-8f08-07d9ecf06137",
+    "name": "Starter standees",
+    "notes": "",
+    "target": 300,
+    "settings": {
+      "columns": "two",
+      "paper": "Letter"
+    },
+    "contingents": [
+      {
+        "id": "31c6542a-d9da-4dbf-b14e-d766c18941b1",
+        "name": "The city guard"
+      }
+    ],
+    "types": [],
+    "units": [],
+    "heroes": []
+  },
+  "paper": {
+    "version": 1,
+    "ranks": 2,
+    "riders": 4,
+    "reverse": "silhouette",
+    "infantryHeight": 14.5,
+    "mountedHeight": 21,
+    "groundColor": "#b6bc91",
+    "figureColor": "#ffffff",
+    "paper": "a4",
+    "orientation": "portrait",
+    "margin": 10,
+    "gap": 4,
+    "guides": true,
+    "quantities": {
+      "gondor-swords": 1,
+      "gondor-horse": 1,
+      "orc-axes": 1,
+      "orc-wargs": 1,
+      "orc-warband": 0,
+      "gondor-spears": 0
+    }
+  },
+  "mapping": {
+    "art": {},
+    "overrides": {},
+    "roles": {},
+    "labels": {},
+    "badges": {},
+    "showBadges": true
   }
 }
