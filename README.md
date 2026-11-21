@@ -45,6 +45,8 @@ Mordor also includes **Mordor Warboss**, a foot leader with a cleaver axe and an
 
 The **Napoleonic Wars** era (`napoleonic`) starts with **French** and **Spanish** factions, each with a line infantry unit of eight figures on a **40 × 20 mm Foot base**. French Line wears blue coats and shakos; Spanish Line wears white coats and bicornes, representing early Peninsular War troops. Both use the existing rank, reverse, nameplate and PDF options. Artwork lives in `artwork/napoleonic/French/` and `artwork/napoleonic/Spanish/`; prompts are recorded in [Napoleonic artwork notes](output/imagegen/napoleonic-notes.md).
 
+The **Wars of the Roses** era groups its units under **English** for use by either side. Knights in sallets and armets each have three variants. Mounted knights carry swords or raised lances, and dismounted knights carry swords. Men-at-Arms carry pollaxes and wear barbutes or kettle hats. Billmen wear kettle hats over cloth jacks. Longbowmen carry tall wooden bows upright, and Crossbowmen carry short crossbows across their bodies. Each Foot rank has eight figures. [Artwork paths and generation prompts](output/imagegen/wars-of-the-roses-notes.md)
+
 ## Unit types
 
 The Middle-earth expansion adds Isengard Warg riders; a Rohan foot captain; Mordor Orc spearmen, heavily armored Morannon Orcs, a banner bearer, a catapult and a Cave Troll; a Gondor foot captain and Aragorn on foot; and Haradrim spearmen, archers and cavalry. Foot Heroes use one upright on a **20 × 20 mm base**, retain artwork proportions, and follow the infantry silhouette/blank reverse setting. The Mordor catapult uses one fixed **23 mm panel** and the Cave Troll one **35 mm panel**, both on **40 × 20 mm bases**. All new artwork follows the simplified print style in [MIDDLE_EARTH_ARTWORK_TODO.md](MIDDLE_EARTH_ARTWORK_TODO.md); full prompts and asset paths are recorded in `output/imagegen/middle-earth-todo-expansion-notes.md`.
@@ -94,6 +96,7 @@ Ground colors default to **By faction**, with distinct, bold colors within each 
 | Middle-earth · Third Age | Gondor: royal blue; Rohan: forest green; Mordor: crimson; Isengard: amethyst; Harad: ochre gold; Orcs: burnt orange; Goblins: warm brown |
 | American Civil War | USA: Union blue; CSA: copper |
 | Napoleonic Wars | French: imperial blue; Spanish: ochre gold |
+| Wars of the Roses | English: madder red with an optional rose symbol |
 
 **Base identification** has independent **Print faction symbols on the ground** and **Print base labels** options. Both are optional and saved with the setup. Symbols use bold vector shapes: Gondor tree, Rohan horse head, Mordor eye, Isengard hand, Harad serpent, Orc axe, and Goblin spearhead; Civil War uses a USA star and CSA crossed sabres; Napoleonic uses a French eagle and Spanish tower. They print in contrasting white or dark ink on the ground color. Foot, Heroes, and Monstrosities use the last ground foot; Cavalry uses a central gap between riders, with its emblem rotated to face along the base depth. Symbols are 3–8 mm square with clearance from folds and cuts. Dense Foot formations with insufficient rear space omit the symbol. A small patch behind each symbol clears fake shadows without removing them elsewhere. Symbols add no paper pieces and do not change fold dimensions.
 

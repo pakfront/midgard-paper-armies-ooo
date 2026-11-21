@@ -518,7 +518,7 @@ class WorkshopTests(unittest.TestCase):
 
     def test_era_and_faction_filters_preserve_selected_bases(self):
         eras = self.page.evaluate("async () => (await import('./src/catalog.js')).catalog.map(a => a.era)")
-        self.assertEqual(set(eras), {'middle-earth-third-age', 'american-civil-war', 'napoleonic'})
+        self.assertEqual(set(eras), {'middle-earth-third-age', 'american-civil-war', 'napoleonic', 'wars-of-the-roses'})
         expect(self.page.locator('#era')).to_have_value('middle-earth-third-age')
         # Simulate a future era to exercise filtering across classifications.
         source = (ROOT / 'src/catalog.js').read_text() + """
@@ -589,6 +589,22 @@ class WorkshopTests(unittest.TestCase):
         self.assertGreater(result['pdf'], 1000)
         self.assertEqual(result['assets'], 4)
         self.assertEqual(result['strips'], [[40, 20, 2, 40, 14.5]] * 2)
+
+    def test_wars_of_the_roses_load_and_export(self):
+        self.page.locator('#era').select_option('wars-of-the-roses')
+        self.page.locator('[data-filter="English"]').click()
+        expect(self.page.locator('.art-card:visible')).to_have_count(10)
+        pages = self.page.evaluate("""async () => {
+          const {catalog} = await import('./src/catalog.js');
+          const {defaultSetup, layoutSetup} = await import('./src/model.js');
+          const {prepareArtwork, createPDF} = await import('./src/render.js');
+          const setup = defaultSetup();
+          setup.quantities = Object.fromEntries(catalog.map(a => [a.id, Number(a.era === 'wars-of-the-roses')]));
+          const layout = layoutSetup(setup);
+          const pdf = await createPDF(layout, await prepareArtwork(layout));
+          return (await PDFLib.PDFDocument.load(pdf)).getPageCount();
+        }""")
+        self.assertGreater(pages, 0)
 
     def test_dynamic_cavalry_artwork_and_pdf_export(self):
         result = self.page.evaluate("""async () => {
